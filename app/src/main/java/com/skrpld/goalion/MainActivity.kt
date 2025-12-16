@@ -4,7 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.material3.Text
+import com.skrpld.goalion.ui.screens.main.MainScreen
+import com.skrpld.goalion.ui.screens.main.MainViewModel
 import com.skrpld.goalion.ui.theme.GoalionTheme
 
 class MainActivity : ComponentActivity() {
@@ -13,7 +14,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             GoalionTheme {
-                Text("Hello, world!")
+                MainScreen(MainViewModel())
             }
         }
     }

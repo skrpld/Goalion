@@ -6,38 +6,30 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AppDao {
-
     // --- Profile ---
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertProfile(profile: Profile): Long
 
-    @Update
-    suspend fun updateProfile(profile: Profile)
-
-    @Delete
-    suspend fun deleteProfile(profile: Profile)
-
-    @Query("SELECT * FROM profiles ORDER BY name ASC")
-    fun getAllProfiles(): Flow<List<Profile>>
+    @Query("SELECT * FROM profiles LIMIT 1")
+    suspend fun getAnyProfile(): Profile?
 
     // --- Goal ---
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertGoal(goal: Goal): Long
 
+    @Update
+    suspend fun updateGoal(goal: Goal)
+
     @Delete
     suspend fun deleteGoal(goal: Goal)
 
-    @Query("SELECT * FROM goals WHERE profileId = :profileId")
-    fun getGoalsByProfileId(profileId: Int): Flow<List<Goal>>
-
     @Transaction
-    @Query("SELECT * FROM goals WHERE id = :goalId")
-    fun getGoalWithTasks(goalId: Int): Flow<GoalWithTasks>
-
+    @Query("SELECT * FROM goals WHERE profileId = :profileId ORDER BY id DESC")
+    fun getGoalsWithTasksList(profileId: Int): Flow<List<GoalWithTasks>>
 
     // --- Task ---
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertTask(task: Task)
+    suspend fun insertTask(task: Task): Long
 
     @Update
     suspend fun updateTask(task: Task)

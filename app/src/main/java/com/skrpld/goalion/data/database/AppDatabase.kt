@@ -11,7 +11,8 @@ import com.skrpld.goalion.data.models.Task
 
 @Database(
     entities = [Profile::class, Goal::class, Task::class],
-    version = 1
+    version = 1,
+    exportSchema = false
 )
 @TypeConverters(AppTypeConverters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -29,7 +30,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "goalion_database"
                 )
-                    // .fallbackToDestructiveMigration()
+                    .fallbackToDestructiveMigration() // TODO: Удалить на релизе
                     .build()
                 INSTANCE = instance
                 instance

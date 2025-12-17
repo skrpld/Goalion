@@ -25,5 +25,6 @@ data class Goal(
     val title: String,
     val profileId: Int,
     val status: TaskStatus = TaskStatus.TODO,
-    val priority: TaskPriority = TaskPriority.NORMAL
+    val priority: TaskPriority = TaskPriority.NORMAL,
+    val orderIndex: Int = 0
 )

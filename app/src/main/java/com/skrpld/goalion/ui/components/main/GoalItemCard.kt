@@ -1,8 +1,9 @@
 package com.skrpld.goalion.ui.components.main
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.*
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,6 +34,8 @@ import com.skrpld.goalion.data.database.TaskPriority
 import com.skrpld.goalion.data.database.TaskStatus
 import com.skrpld.goalion.data.models.GoalWithTasks
 import com.skrpld.goalion.data.models.Task
+
+private const val EXPAND_ANIMATION_DURATION = 300
 
 @Composable
 fun GoalItemCard(
@@ -82,6 +85,10 @@ fun GoalItemCard(
 
     val rotationState by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
+        animationSpec = tween(
+            durationMillis = EXPAND_ANIMATION_DURATION,
+            easing = FastOutSlowInEasing
+        ),
         label = "Arrow Rotation"
     )
 
@@ -131,13 +138,12 @@ fun GoalItemCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
     ) {
-        Column(modifier = Modifier.animateContentSize()) {
+        Column {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { expanded = !expanded }
                     .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
                 IconButton(
                     onClick = onGoalStatusClick,
@@ -152,88 +158,92 @@ fun GoalItemCard(
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                if (isEditing) {
-                    var tempTitle by remember { mutableStateOf(item.goal.title) }
-                    BasicTextField(
-                        value = tempTitle,
-                        onValueChange = { tempTitle = it },
-                        modifier = Modifier
-                            .weight(1f)
-                            .focusRequester(focusRequester)
-                            .onFocusChanged { focusState ->
-                                if (focusState.isFocused) hasGainedFocus = true
-                                if (!focusState.isFocused && hasGainedFocus) {
-                                    onEditGoalTitle(tempTitle)
-                                    isEditing = false
-                                    hasGainedFocus = false
-                                }
-                            },
-                        textStyle = titleTextStyle,
-                        singleLine = true,
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
-                    )
-                } else {
-                    Column(modifier = Modifier.weight(1f)) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable(enabled = !isEditing) {
+                            isEditing = true
+                            hasGainedFocus = false
+                        }
+                ) {
+                    if (isEditing) {
+                        var tempTitle by remember { mutableStateOf(item.goal.title) }
+                        BasicTextField(
+                            value = tempTitle,
+                            onValueChange = { tempTitle = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .focusRequester(focusRequester)
+                                .onFocusChanged { focusState ->
+                                    if (focusState.isFocused) hasGainedFocus = true
+                                    if (!focusState.isFocused && hasGainedFocus) {
+                                        onEditGoalTitle(tempTitle)
+                                        isEditing = false
+                                        hasGainedFocus = false
+                                    }
+                                },
+                            textStyle = titleTextStyle,
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() })
+                        )
+                    } else {
                         Text(
                             text = item.goal.title.ifEmpty { "Unnamed Goal" },
                             style = if (item.goal.title.isEmpty()) MaterialTheme.typography.titleMedium.copy(color = MaterialTheme.colorScheme.outline) else titleTextStyle
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        Card(
-                            shape = RoundedCornerShape(4.dp),
-                            colors = CardDefaults.cardColors(containerColor = priorityColor),
-                            modifier = Modifier
-                                .wrapContentSize()
-                                .clickable { onGoalPriorityClick() }
-                        ) {
-                            Text(
-                                text = item.goal.priority.name,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                color = Color.White,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-                }
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (!isEditing) {
-                        IconButton(
-                            onClick = {
-                                isEditing = true
-                                hasGainedFocus = false
-                            },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = "Edit Name",
-                                modifier = Modifier.size(18.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
                     }
 
-                    IconButton(
-                        onClick = { expanded = !expanded },
-                        modifier = Modifier.size(32.dp)
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Card(
+                        shape = RoundedCornerShape(4.dp),
+                        colors = CardDefaults.cardColors(containerColor = priorityColor),
+                        modifier = Modifier
+                            .wrapContentSize()
+                            .clickable { onGoalPriorityClick() }
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.KeyboardArrowDown,
-                            contentDescription = "Expand",
-                            modifier = Modifier.rotate(rotationState)
+                        Text(
+                            text = item.goal.priority.name,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = Color.White,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
                 }
+
+                IconButton(
+                    onClick = { expanded = !expanded },
+                    modifier = Modifier
+                        .size(32.dp)
+                        .padding(start = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = "Expand",
+                        modifier = Modifier.rotate(rotationState)
+                    )
+                }
             }
 
-            AnimatedVisibility(visible = expanded) {
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically(
+                    animationSpec = tween(EXPAND_ANIMATION_DURATION, easing = FastOutSlowInEasing),
+                    expandFrom = Alignment.Top
+                ) + fadeIn(
+                    animationSpec = tween(EXPAND_ANIMATION_DURATION, easing = FastOutSlowInEasing)
+                ),
+                exit = shrinkVertically(
+                    animationSpec = tween(EXPAND_ANIMATION_DURATION, easing = FastOutSlowInEasing),
+                    shrinkTowards = Alignment.Top
+                ) + fadeOut(
+                    animationSpec = tween(EXPAND_ANIMATION_DURATION, easing = FastOutSlowInEasing)
+                )
+            ) {
                 Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
                     Divider(color = MaterialTheme.colorScheme.outlineVariant)
                     Spacer(modifier = Modifier.height(8.dp))

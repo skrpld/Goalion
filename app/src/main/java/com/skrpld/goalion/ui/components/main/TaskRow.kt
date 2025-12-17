@@ -8,8 +8,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Circle
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -113,78 +111,64 @@ fun TaskRow(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        if (isEditing) {
-            BasicTextField(
-                value = tempTitle,
-                onValueChange = { tempTitle = it },
-                modifier = Modifier
-                    .weight(1f)
-                    .focusRequester(focusRequester)
-                    .onFocusChanged { focusState ->
-                        if (focusState.isFocused) {
-                            hasGainedFocus = true
-                        }
-                        if (!focusState.isFocused && hasGainedFocus) {
-                            onSave(tempTitle)
-                            isEditing = false
-                            hasGainedFocus = false
-                        }
-                    },
-                textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
-                singleLine = true,
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = {
-                    focusManager.clearFocus()
-                })
-            )
-        } else {
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable {
-                        isEditing = true
-                        hasGainedFocus = false
-                    }
-            ) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .clickable(enabled = !isEditing) {
+                    isEditing = true
+                    hasGainedFocus = false
+                }
+        ) {
+            if (isEditing) {
+                BasicTextField(
+                    value = tempTitle,
+                    onValueChange = { tempTitle = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(focusRequester)
+                        .onFocusChanged { focusState ->
+                            if (focusState.isFocused) {
+                                hasGainedFocus = true
+                            }
+                            if (!focusState.isFocused && hasGainedFocus) {
+                                onSave(tempTitle)
+                                isEditing = false
+                                hasGainedFocus = false
+                            }
+                        },
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = {
+                        focusManager.clearFocus()
+                    })
+                )
+            } else {
                 Text(
                     text = task.title.ifEmpty { "New Task" },
                     style = if (task.title.isEmpty()) MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.outline) else titleTextStyle
                 )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Card(
-                    shape = RoundedCornerShape(4.dp),
-                    colors = CardDefaults.cardColors(containerColor = priorityColor),
-                    modifier = Modifier
-                        .wrapContentSize()
-                        .clickable { onPriorityClick() }
-                ) {
-                    Text(
-                        text = task.priority.name,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = Color.White,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
-                }
             }
 
-            IconButton(
-                onClick = {
-                    isEditing = true
-                    hasGainedFocus = false
-                },
-                modifier = Modifier.size(24.dp)
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Card(
+                shape = RoundedCornerShape(4.dp),
+                colors = CardDefaults.cardColors(containerColor = priorityColor),
+                modifier = Modifier
+                    .wrapContentSize()
+                    .clickable {
+                        onPriorityClick()
+                    }
             ) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Edit Task",
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                Text(
+                    text = task.priority.name,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = Color.White,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                 )
             }
         }

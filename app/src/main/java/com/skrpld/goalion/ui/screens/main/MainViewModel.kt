@@ -1,53 +1,123 @@
 package com.skrpld.goalion.ui.screens.main
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.skrpld.goalion.data.database.AppDao
 import com.skrpld.goalion.data.database.TaskPriority
 import com.skrpld.goalion.data.database.TaskStatus
 import com.skrpld.goalion.data.models.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 
-// Состояние экрана
 data class MainUiState(
-    val profile: Profile = Profile(name = "User"), // Заглушка
-    val goals: List<GoalWithTasks> = emptyList()
+    val profile: Profile = Profile(name = "Loading..."),
+    val goals: List<GoalWithTasks> = emptyList(),
+    // ID элементов, которые нужно перевести в режим редактирования сразу после загрузки списка
+    val goalIdToEdit: Int? = null,
+    val taskIdToEdit: Int? = null
 )
 
-class MainViewModel : ViewModel() {
+class MainViewModel(
+    private val dao: AppDao // Передаем DAO в конструктор
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
+    // Текущий ID профиля (в реальном приложении берется из Datastore или Auth)
+    private var currentProfileId: Int = 0
+
     init {
-        // TODO: Подписаться на Flow из Room
-        loadMockData() // Тестовые данные
+        initializeData()
     }
 
-    private fun loadMockData() {
-        val mockTasks = listOf(
-            Task(1, "Read Chapter 1", "Basics", TaskStatus.TODO, TaskPriority.HIGH, 1),
-            Task(2, "Do exercises", "Page 20", TaskStatus.IN_PROGRESS, TaskPriority.MEDIUM, 1)
-        )
-        val mockGoal = Goal(1, "Learn Kotlin", 1)
+    private fun initializeData() {
+        viewModelScope.launch {
+            var profile = dao.getAnyProfile()
+            if (profile == null) {
+                val newId = dao.insertProfile(Profile(name = "User"))
+                profile = Profile(newId.toInt(), "User")
+            }
+            currentProfileId = profile.id
 
-        val goalWithTasks = GoalWithTasks(mockGoal, mockTasks)
+            _uiState.update { it.copy(profile = profile) }
 
-        _uiState.value = MainUiState(
-            profile = Profile(1, "Alex"),
-            goals = listOf(goalWithTasks, goalWithTasks.copy(goal = Goal(2, "Sport", 1), tasks = emptyList()))
-        )
+            dao.getGoalsWithTasksList(currentProfileId).collect { goalsList ->
+                _uiState.update { it.copy(goals = goalsList) }
+            }
+        }
     }
 
     fun onAddGoalClick() {
+        viewModelScope.launch {
+            // Создаем пустую цель
+            val newGoal = Goal(title = "", profileId = currentProfileId)
+            val newId = dao.insertGoal(newGoal).toInt()
 
+            // Указываем UI, что эту цель нужно сразу начать редактировать
+            _uiState.update { it.copy(goalIdToEdit = newId) }
+        }
     }
 
-    fun onProfileClick() {
+    fun onGoalTitleChanged(goal: Goal, newTitle: String) {
+        if (goal.title == newTitle) return // Избегаем лишних записей
+        viewModelScope.launch {
+            dao.updateGoal(goal.copy(title = newTitle))
+        }
+    }
 
+    // Сбрасываем флаг редактирования, когда UI "подхватил" фокус
+    fun onGoalEditStarted() {
+        _uiState.update { it.copy(goalIdToEdit = null) }
     }
 
     fun onAddTaskClick(goalId: Int) {
+        viewModelScope.launch {
+            val newTask = Task(
+                title = "",
+                description = "",
+                status = TaskStatus.TODO,
+                priority = TaskPriority.MEDIUM,
+                goalId = goalId
+            )
+            val newId = dao.insertTask(newTask).toInt()
 
+            // Указываем UI, что эту задачу нужно редактировать, и нужно раскрыть список (если свернут)
+            // Логику раскрытия списка лучше делать в UI, но здесь мы триггерим эдит
+            _uiState.update { it.copy(taskIdToEdit = newId) }
+        }
+    }
+
+    fun onTaskTitleChanged(task: Task, newTitle: String) {
+        if (task.title == newTitle) return
+        viewModelScope.launch {
+            dao.updateTask(task.copy(title = newTitle))
+        }
+    }
+
+    fun onTaskEditStarted() {
+        _uiState.update { it.copy(taskIdToEdit = null) }
+    }
+
+    fun onTaskStatusChange(task: Task) {
+        viewModelScope.launch {
+            val newStatus = if (task.status == TaskStatus.DONE) TaskStatus.TODO else TaskStatus.DONE
+            dao.updateTaskStatus(task.id, newStatus)
+        }
+    }
+
+    fun onProfileClick() {
+        // Логика профиля
+    }
+}
+
+class MainViewModelFactory(private val dao: AppDao) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return MainViewModel(dao) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

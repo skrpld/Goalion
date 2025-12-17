@@ -24,7 +24,7 @@ data class Task(
     val id: Int = 0,
     val title: String,
     val description: String,
-    val status: TaskStatus,
-    val priority: TaskPriority,
+    val status: TaskStatus = TaskStatus.TODO,
+    val priority: TaskPriority = TaskPriority.NORMAL,
     val goalId: Int
 )

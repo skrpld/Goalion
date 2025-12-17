@@ -2,12 +2,12 @@ package com.skrpld.goalion.data.database
 
 enum class TaskStatus {
     TODO,
-    IN_PROGRESS,
+    DOING,
     DONE
 }
 
 enum class TaskPriority {
     LOW,
-    MEDIUM,
+    NORMAL,
     HIGH
 }

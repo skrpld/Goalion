@@ -13,19 +13,17 @@ import kotlinx.coroutines.launch
 data class MainUiState(
     val profile: Profile = Profile(name = "Loading..."),
     val goals: List<GoalWithTasks> = emptyList(),
-    // ID элементов, которые нужно перевести в режим редактирования сразу после загрузки списка
     val goalIdToEdit: Int? = null,
     val taskIdToEdit: Int? = null
 )
 
 class MainViewModel(
-    private val dao: AppDao // Передаем DAO в конструктор
+    private val dao: AppDao
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
-    // Текущий ID профиля (в реальном приложении берется из Datastore или Auth)
     private var currentProfileId: Int = 0
 
     init {
@@ -40,36 +38,66 @@ class MainViewModel(
                 profile = Profile(newId.toInt(), "User")
             }
             currentProfileId = profile.id
-
             _uiState.update { it.copy(profile = profile) }
 
-            dao.getGoalsWithTasksList(currentProfileId).collect { goalsList ->
-                _uiState.update { it.copy(goals = goalsList) }
-            }
+            dao.getGoalsWithTasksList(currentProfileId)
+                .map { goals ->
+                    goals.sortedWith(
+                        compareBy<GoalWithTasks> {
+                            when (it.goal.status) {
+                                TaskStatus.TODO -> 0
+                                TaskStatus.DONE -> 1
+                            }
+                        }.thenBy {
+                            when (it.goal.priority) {
+                                TaskPriority.HIGH -> 0
+                                TaskPriority.NORMAL -> 1
+                                TaskPriority.LOW -> 2
+                            }
+                        }
+                    )
+                }
+                .collect { sortedGoals ->
+                    _uiState.update { it.copy(goals = sortedGoals) }
+                }
         }
     }
 
     fun onAddGoalClick() {
         viewModelScope.launch {
-            // Создаем пустую цель
             val newGoal = Goal(title = "", profileId = currentProfileId)
             val newId = dao.insertGoal(newGoal).toInt()
-
-            // Указываем UI, что эту цель нужно сразу начать редактировать
             _uiState.update { it.copy(goalIdToEdit = newId) }
         }
     }
 
     fun onGoalTitleChanged(goal: Goal, newTitle: String) {
-        if (goal.title == newTitle) return // Избегаем лишних записей
+        if (goal.title == newTitle) return
         viewModelScope.launch {
             dao.updateGoal(goal.copy(title = newTitle))
         }
     }
 
-    // Сбрасываем флаг редактирования, когда UI "подхватил" фокус
     fun onGoalEditStarted() {
         _uiState.update { it.copy(goalIdToEdit = null) }
+    }
+
+    fun onGoalStatusChange(goalId: Int, currentStatus: TaskStatus) {
+        viewModelScope.launch {
+            val newStatus = if (currentStatus == TaskStatus.DONE) TaskStatus.TODO else TaskStatus.DONE
+            dao.updateGoalStatus(goalId, newStatus)
+        }
+    }
+
+    fun onGoalPriorityChange(goalId: Int, currentPriority: TaskPriority) {
+        viewModelScope.launch {
+            val nextPriority = when (currentPriority) {
+                TaskPriority.LOW -> TaskPriority.NORMAL
+                TaskPriority.NORMAL -> TaskPriority.HIGH
+                TaskPriority.HIGH -> TaskPriority.LOW
+            }
+            dao.updateGoalPriority(goalId, nextPriority)
+        }
     }
 
     fun onAddTaskClick(goalId: Int) {
@@ -78,13 +106,10 @@ class MainViewModel(
                 title = "",
                 description = "",
                 status = TaskStatus.TODO,
-                priority = TaskPriority.MEDIUM,
+                priority = TaskPriority.NORMAL,
                 goalId = goalId
             )
             val newId = dao.insertTask(newTask).toInt()
-
-            // Указываем UI, что эту задачу нужно редактировать, и нужно раскрыть список (если свернут)
-            // Логику раскрытия списка лучше делать в UI, но здесь мы триггерим эдит
             _uiState.update { it.copy(taskIdToEdit = newId) }
         }
     }
@@ -106,9 +131,20 @@ class MainViewModel(
             dao.updateTaskStatus(task.id, newStatus)
         }
     }
+    fun onTaskPriorityChange(task: Task) {
+        viewModelScope.launch {
+            val nextPriority = when (task.priority) {
+                TaskPriority.LOW -> TaskPriority.NORMAL
+                TaskPriority.NORMAL -> TaskPriority.HIGH
+                TaskPriority.HIGH -> TaskPriority.LOW
+            }
+
+            dao.updateTaskPriority(task.id, nextPriority)
+        }
+    }
 
     fun onProfileClick() {
-        // Логика профиля
+        // TODO: Открыть список профилей
     }
 }
 

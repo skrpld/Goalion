@@ -4,7 +4,6 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.skrpld.goalion.data.database.TaskPriority
 import com.skrpld.goalion.data.database.TaskStatus
 
 @Entity(
@@ -25,7 +24,7 @@ data class Task(
     val title: String,
     val description: String,
     val status: TaskStatus = TaskStatus.TODO,
-    val priority: TaskPriority = TaskPriority.NORMAL,
+    val priority: Int = 1,
     val orderIndex: Int = 0,
     val goalId: Int
 )

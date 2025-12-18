@@ -5,10 +5,22 @@ import androidx.lifecycle.viewModelScope
 import com.skrpld.goalion.data.database.AppDao
 import com.skrpld.goalion.data.models.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class MainViewModel(private val dao: AppDao) : ViewModel() {
+
+    enum class SelectionType { GOAL, TASK }
+    data class SelectedElement(val id: Int, val type: SelectionType)
+
+    private val _selectedElement = MutableStateFlow<SelectedElement?>(null)
+    val selectedElement = _selectedElement.asStateFlow()
+
+    private val _editingElementId = MutableStateFlow<Int?>(null)
+    val editingElementId = _editingElementId.asStateFlow()
+
+    private var priorityUpdateJob: Job? = null
 
     private val _selectedTask = MutableStateFlow<Task?>(null)
     val selectedTask = _selectedTask.asStateFlow()

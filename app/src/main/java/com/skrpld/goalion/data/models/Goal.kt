@@ -4,7 +4,6 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.skrpld.goalion.data.database.TaskPriority
 import com.skrpld.goalion.data.database.TaskStatus
 
 @Entity(

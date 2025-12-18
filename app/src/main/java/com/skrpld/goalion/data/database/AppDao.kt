@@ -7,36 +7,21 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface AppDao {
     // --- Profile ---
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertProfile(profile: Profile): Long
+    @Upsert
+    suspend fun upsertProfile(profile: Profile): Long
 
     @Query("SELECT * FROM profiles LIMIT 1")
     suspend fun getAnyProfile(): Profile?
 
     // --- Goal ---
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertGoal(goal: Goal): Long
+    @Upsert
+    suspend fun upsertGoal(goal: Goal): Long
 
     @Update
     suspend fun updateGoal(goal: Goal)
 
     @Delete
     suspend fun deleteGoal(goal: Goal)
-
-    @Transaction
-    @Query("""
-        SELECT * FROM goals 
-        WHERE profileId = :profileId 
-        ORDER BY 
-            status ASC, 
-            CASE priority 
-                WHEN 'HIGH' THEN 0 
-                WHEN 'NORMAL' THEN 1 
-                WHEN 'LOW' THEN 2 
-            END ASC,
-            orderIndex ASC
-    """)
-    fun getGoalsWithTasksList(profileId: Int): Flow<List<GoalWithTasks>>
 
     @Query("UPDATE goals SET status = :status WHERE id = :goalId")
     suspend fun updateGoalStatus(goalId: Int, status: TaskStatus)
@@ -47,9 +32,17 @@ interface AppDao {
     @Query("UPDATE goals SET orderIndex = :newOrder WHERE id = :goalId")
     suspend fun updateGoalOrder(goalId: Int, newOrder: Int)
 
+    @Transaction
+    @Query("""
+        SELECT * FROM goals 
+        WHERE profileId = :profileId 
+        ORDER BY status ASC, priority ASC, orderIndex ASC
+    """)
+    fun getGoalsWithTasksList(profileId: Int): Flow<List<GoalWithTasks>>
+
     // --- Task ---
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertTask(task: Task): Long
+    @Upsert
+    suspend fun upsertTask(task: Task): Long
 
     @Update
     suspend fun updateTask(task: Task)

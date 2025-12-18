@@ -23,8 +23,8 @@ data class Goal(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val title: String,
-    val profileId: Int,
     val status: TaskStatus = TaskStatus.TODO,
     val priority: TaskPriority = TaskPriority.NORMAL,
-    val orderIndex: Int = 0
+    val orderIndex: Int = 0,
+    val profileId: Int
 )

@@ -23,10 +23,6 @@ fun MainScreen(
 
     val listState = rememberLazyListState()
 
-    val dragDropState = rememberDragDropState(listState) { from, to ->
-        viewModel.onGoalReorder(from, to)
-    }
-
     Scaffold(
         topBar = { TopBar(viewModel) },
         floatingActionButton = {
@@ -42,18 +38,14 @@ fun MainScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp)
-                .then(dragDropState.dragGestureModifier),
+                .padding(horizontal = 16.dp),
             state = listState,
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = PaddingValues(bottom = 80.dp)
         ) {
             itemsIndexed(state.goals, key = { _, item -> item.goal.id }) { index, goalWithTasks ->
 
-                Box(
-                    modifier = Modifier
-                        .dragDropItem(index, dragDropState)
-                ) {
+                Box {
                     GoalItemCard(
                         item = goalWithTasks,
                         startEditing = state.goalIdToEdit == goalWithTasks.goal.id,

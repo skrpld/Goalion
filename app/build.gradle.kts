@@ -69,5 +69,6 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
-    implementation(libs.reorderable)
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
 }

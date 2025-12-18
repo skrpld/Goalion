@@ -1,25 +1,29 @@
 package com.skrpld.goalion.ui.screens.main
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.skrpld.goalion.data.models.Goal
 import com.skrpld.goalion.data.models.Task
 import com.skrpld.goalion.ui.components.main.GoalCard
-import com.skrpld.goalion.ui.theme.GoalionTheme
 
 @Composable
 fun GoalsList(
     items: List<GoalListItem>,
-    onGoalClick: (Int) -> Unit,
+    editingId: Int?,
+    selectedActionId: Int?,
+    onGoalToggle: (Int) -> Unit,
+    onGoalLongClick: (Goal) -> Unit,
+    onGoalDoubleClick: (Goal) -> Unit,
     onTaskClick: (Task) -> Unit,
-    onAddTask: (Int) -> Unit
+    onTaskLongClick: (Task) -> Unit,
+    onTaskDoubleClick: (Task) -> Unit,
+    onAddTask: (Int) -> Unit,
+    onTitleChange: (Int, String, Boolean) -> Unit,
+    onEditDone: () -> Unit
 ) {
     val groupedItems = remember(items) {
         val list = mutableListOf<Pair<GoalListItem.GoalHeader, List<Task>>>()
@@ -29,15 +33,11 @@ fun GoalsList(
         items.forEach { item ->
             when (item) {
                 is GoalListItem.GoalHeader -> {
-                    if (currentGoal != null) {
-                        list.add(currentGoal!! to currentTasks)
-                    }
+                    if (currentGoal != null) list.add(currentGoal to currentTasks)
                     currentGoal = item
                     currentTasks = mutableListOf()
                 }
-                is GoalListItem.TaskItem -> {
-                    currentTasks.add(item.task)
-                }
+                is GoalListItem.TaskItem -> currentTasks.add(item.task)
             }
         }
         currentGoal?.let { list.add(it to currentTasks) }
@@ -49,32 +49,27 @@ fun GoalsList(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(
-            items = groupedItems,
-            key = { (header, _) -> header.goal.id }
-        ) { (header, tasks) ->
+        items(items = groupedItems, key = { (header, _) -> header.goal.id }) { (header, tasks) ->
             GoalCard(
                 goal = header.goal,
                 tasks = tasks,
                 isExpanded = header.isExpanded,
-                onToggle = { onGoalClick(header.goal.id) },
+                isEditing = editingId == header.goal.id,
+                isSelected = selectedActionId == header.goal.id,
+                editingTaskId = editingId,
+                selectedTaskId = selectedActionId,
+                onToggle = { onGoalToggle(header.goal.id) },
+                onLongClick = { onGoalLongClick(header.goal) },
+                onDoubleClick = { onGoalDoubleClick(header.goal) },
                 onTaskClick = onTaskClick,
+                onTaskLongClick = onTaskLongClick,
+                onTaskDoubleClick = onTaskDoubleClick,
                 onAddSubTask = { onAddTask(header.goal.id) },
+                onTitleChange = { onTitleChange(header.goal.id, it, true) },
+                onTaskTitleChange = { id, title -> onTitleChange(id, title, false) },
+                onEditDone = onEditDone,
                 modifier = Modifier.animateItem()
             )
         }
-    }
-}
-
-@Preview(showBackground = true, name = "Main List Preview")
-@Composable
-fun GoalsListPreview() {
-    GoalionTheme {
-        GoalsList(
-            items = MockData.previewItems,
-            onGoalClick = {},
-            onTaskClick = {},
-            onAddTask = {}
-        )
     }
 }

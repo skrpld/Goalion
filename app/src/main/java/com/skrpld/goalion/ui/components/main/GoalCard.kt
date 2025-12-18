@@ -1,89 +1,137 @@
 package com.skrpld.goalion.ui.components.main
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.animation.*
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircleOutline
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import com.skrpld.goalion.data.database.TaskStatus
 import com.skrpld.goalion.data.models.Goal
 import com.skrpld.goalion.data.models.Task
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GoalCard(
     goal: Goal,
     tasks: List<Task>,
     isExpanded: Boolean,
+    isEditing: Boolean,
+    isSelected: Boolean,
+    editingTaskId: Int?,
+    selectedTaskId: Int?,
     onToggle: () -> Unit,
+    onLongClick: () -> Unit,
+    onDoubleClick: () -> Unit,
     onTaskClick: (Task) -> Unit,
+    onTaskLongClick: (Task) -> Unit,
+    onTaskDoubleClick: (Task) -> Unit,
     onAddSubTask: () -> Unit,
+    onTitleChange: (String) -> Unit,
+    onTaskTitleChange: (Int, String) -> Unit,
+    onEditDone: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val rotation by animateFloatAsState(
-        targetValue = if (isExpanded) 180f else 0f,
-        label = "RotationAnimation"
-    )
+    val focusRequester = remember { FocusRequester() }
+    val borderColor = when(goal.priority) {
+        0 -> Color.Red
+        1 -> Color.Yellow
+        else -> Color.Green
+    }
 
     Card(
-        modifier = modifier.fillMaxWidth(),
-        onClick = onToggle
+        modifier = modifier
+            .fillMaxWidth()
+            .border(
+                width = if (isSelected) 2.dp else 0.dp,
+                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                shape = MaterialTheme.shapes.medium
+            ),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
-        Column {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = goal.title, style = MaterialTheme.typography.titleMedium)
-                    Text(text = "Priority: ${goal.priority}", style = MaterialTheme.typography.bodySmall)
-                }
+        Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+            Box(modifier = Modifier.fillMaxHeight().width(6.dp).background(borderColor))
 
-                IconButton(onClick = onAddSubTask) {
-                    Icon(Icons.Default.AddCircleOutline, contentDescription = null)
-                }
-
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = null,
-                    modifier = Modifier.rotate(rotation)
-                )
-            }
-
-            AnimatedVisibility(
-                visible = isExpanded,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
-            ) {
-                Column(
+            Column {
+                Row(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    tasks.forEach { task ->
-                        TaskCard(
-                            task = task,
-                            onClick = { onTaskClick(task) }
+                        .combinedClickable(
+                            onClick = onToggle,
+                            onLongClick = onLongClick,
+                            onDoubleClick = onDoubleClick
                         )
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        if (isEditing) {
+                            BasicTextField(
+                                value = goal.title,
+                                onValueChange = onTitleChange,
+                                textStyle = MaterialTheme.typography.titleMedium,
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                keyboardActions = KeyboardActions(onDone = { onEditDone() }),
+                                modifier = Modifier.focusRequester(focusRequester)
+                            )
+                            LaunchedEffect(Unit) { focusRequester.requestFocus() }
+                        } else {
+                            Text(
+                                text = goal.title.ifEmpty { "New Goal" },
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    textDecoration = if (goal.status == TaskStatus.DONE) TextDecoration.LineThrough else null,
+                                    color = if (goal.status == TaskStatus.DONE) Color.Gray else Color.Unspecified
+                                )
+                            )
+                        }
+                    }
+                }
+
+                AnimatedVisibility(visible = isExpanded) {
+                    Column(
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        tasks.forEach { task ->
+                            TaskCard(
+                                task = task,
+                                isEditing = editingTaskId == task.id,
+                                isSelected = selectedTaskId == task.id,
+                                onTitleChange = { onTaskTitleChange(task.id, it) },
+                                onEditDone = onEditDone,
+                                onClick = { onTaskClick(task) },
+                                onLongClick = { onTaskLongClick(task) },
+                                onDoubleClick = { onTaskDoubleClick(task) }
+                            )
+                        }
+
+                        OutlinedCard(
+                            onClick = onAddSubTask,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(8.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Text("Add task", style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
                     }
                 }
             }

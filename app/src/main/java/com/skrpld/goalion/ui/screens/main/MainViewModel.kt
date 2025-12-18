@@ -3,121 +3,155 @@ package com.skrpld.goalion.ui.screens.main
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.skrpld.goalion.data.database.AppDao
+import com.skrpld.goalion.data.database.TaskStatus
 import com.skrpld.goalion.data.models.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class MainViewModel(private val dao: AppDao) : ViewModel() {
 
-    enum class SelectionType { GOAL, TASK }
-    data class SelectedElement(val id: Int, val type: SelectionType)
+    private val _selectedActionItem = MutableStateFlow<ActionTarget?>(null)
+    val selectedActionItem = _selectedActionItem.asStateFlow()
 
-    private val _selectedElement = MutableStateFlow<SelectedElement?>(null)
-    val selectedElement = _selectedElement.asStateFlow()
+    private val _editingId = MutableStateFlow<Int?>(null)
+    val editingId = _editingId.asStateFlow()
 
-    private val _editingElementId = MutableStateFlow<Int?>(null)
-    val editingElementId = _editingElementId.asStateFlow()
-
-    private var priorityUpdateJob: Job? = null
-
-    private val _selectedTask = MutableStateFlow<Task?>(null)
-    val selectedTask = _selectedTask.asStateFlow()
+    private val _selectedTaskForDetails = MutableStateFlow<Task?>(null)
+    val selectedTaskForDetails = _selectedTaskForDetails.asStateFlow()
 
     private val _expandedGoalIds = MutableStateFlow<Set<Int>>(emptySet())
 
-    private val profileFlow = flow { emit(dao.getAnyProfile()) }
+    private var prioritySaveJob: Job? = null
+
+    private val profileFlow = flow {
+        var profile = dao.getAnyProfile()
+        if (profile == null) {
+            val newId = dao.upsertProfile(Profile(name = "Default"))
+            profile = Profile(id = newId.toInt(), name = "Default")
+        }
+        emit(profile)
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<MainUiState> = profileFlow.flatMapLatest { profile ->
-        if (profile == null) {
-            flowOf(MainUiState.Empty)
-        } else {
-            combine(
-                dao.getGoalsWithTasksList(profile.id),
-                _expandedGoalIds
-            ) { goalsWithTasks, expandedIds ->
-
+        combine(
+            dao.getGoalsWithTasksList(profile.id),
+            _expandedGoalIds
+        ) { goalsWithTasks, expandedIds ->
+            if (goalsWithTasks.isEmpty()) {
+                MainUiState.Empty(profile.id)
+            } else {
                 val flatList = mutableListOf<GoalListItem>()
-
                 goalsWithTasks.forEach { item ->
                     val isExpanded = expandedIds.contains(item.goal.id)
-
                     flatList.add(GoalListItem.GoalHeader(item.goal, isExpanded))
-
                     if (isExpanded) {
                         val sortedTasks = item.tasks.sortedBy { it.orderIndex }
                         flatList.addAll(sortedTasks.map { GoalListItem.TaskItem(it) })
                     }
                 }
-
-                if (flatList.isEmpty()) MainUiState.Empty
-                else MainUiState.Success(flatList, profile.id)
+                MainUiState.Success(flatList, profile.id)
             }
         }
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = MainUiState.Loading
-    )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MainUiState.Loading)
 
     sealed class MainUiState {
         object Loading : MainUiState()
         data class Success(val items: List<GoalListItem>, val profileId: Int) : MainUiState()
-        object Empty : MainUiState()
+        data class Empty(val profileId: Int) : MainUiState()
     }
 
-    // --- fun ---
+    // --- Actions ---
+
+    fun addGoal(profileId: Int) {
+        viewModelScope.launch {
+            val id = dao.upsertGoal(Goal(title = "", profileId = profileId, orderIndex = 0)).toInt()
+            startEditing(id)
+        }
+    }
+
+    fun addTask(goalId: Int) {
+        viewModelScope.launch {
+            val id = dao.upsertTask(Task(title = "", goalId = goalId, description = "", orderIndex = 0)).toInt()
+            _expandedGoalIds.update { it + goalId }
+            startEditing(id)
+        }
+    }
+
+    fun startEditing(id: Int) {
+        _editingId.value = id
+        _selectedActionItem.value = null
+    }
+
+    fun stopEditing() {
+        _editingId.value = null
+    }
+
+    fun selectActionItem(target: ActionTarget?) {
+        _selectedActionItem.value = target
+    }
 
     fun toggleGoalExpanded(goalId: Int) {
-        _expandedGoalIds.update { current ->
-            if (current.contains(goalId)) current - goalId else current + goalId
-        }
+        _expandedGoalIds.update { if (it.contains(goalId)) it - goalId else it + goalId }
     }
-
 
     fun showTaskDetails(task: Task?) {
-        _selectedTask.value = task
+        _selectedTaskForDetails.value = task
     }
 
-    fun addGoal(title: String, profileId: Int) {
-        viewModelScope.launch {
-            val newGoal = Goal(title = title, profileId = profileId, orderIndex = 0)
-            dao.upsertGoal(newGoal)
+    fun updateGoalTitle(goal: Goal, title: String) = viewModelScope.launch {
+        dao.upsertGoal(goal.copy(title = title))
+    }
+
+    fun updateTaskTitle(task: Task, title: String) = viewModelScope.launch {
+        dao.upsertTask(task.copy(title = title))
+    }
+
+    fun updateTaskDescription(task: Task, desc: String) = viewModelScope.launch {
+        dao.upsertTask(task.copy(description = desc))
+    }
+
+    fun toggleStatus(target: ActionTarget) = viewModelScope.launch {
+        when (target) {
+            is ActionTarget.GoalTarget -> dao.upsertGoal(target.goal.copy(status = if (target.goal.status == TaskStatus.TODO) TaskStatus.DONE else TaskStatus.TODO))
+            is ActionTarget.TaskTarget -> dao.upsertTask(target.task.copy(status = if (target.task.status == TaskStatus.TODO) TaskStatus.DONE else TaskStatus.TODO))
         }
     }
 
-    fun addTask(goalId: Int, title: String) {
-        viewModelScope.launch {
-            val newTask = Task(title = title, goalId = goalId, description = "", orderIndex = 0)
-            dao.upsertTask(newTask)
+    fun cyclePriority() {
+        val current = _selectedActionItem.value ?: return
+        prioritySaveJob?.cancel()
+        val updated = when (current) {
+            is ActionTarget.GoalTarget -> current.copy(goal = current.goal.copy(priority = (current.goal.priority + 1) % 3))
+            is ActionTarget.TaskTarget -> current.copy(task = current.task.copy(priority = (current.task.priority + 1) % 3))
+        }
+        _selectedActionItem.value = updated
+        prioritySaveJob = viewModelScope.launch {
+            delay(1500)
+            when (val target = _selectedActionItem.value) {
+                is ActionTarget.GoalTarget -> dao.upsertGoal(target.goal)
+                is ActionTarget.TaskTarget -> dao.upsertTask(target.task)
+                null -> {}
+            }
         }
     }
 
-    fun updateGoalTitle(goal: Goal, newTitle: String) {
-        viewModelScope.launch {
-            dao.upsertGoal(goal.copy(title = newTitle))
+    fun deleteCurrentTarget() = viewModelScope.launch {
+        when (val current = _selectedActionItem.value) {
+            is ActionTarget.GoalTarget -> dao.deleteGoal(current.goal)
+            is ActionTarget.TaskTarget -> dao.deleteTask(current.task)
+            null -> {}
         }
+        _selectedActionItem.value = null
     }
 
-    fun updateTaskDetails(task: Task, newTitle: String, newDescription: String) {
-        viewModelScope.launch {
-            dao.upsertTask(
-                task.copy(title = newTitle, description = newDescription)
-            )
-        }
-    }
-
-    fun deleteGoal(goal: Goal) = viewModelScope.launch { dao.deleteGoal(goal) }
-    fun deleteTask(task: Task) = viewModelScope.launch { dao.deleteTask(task) }
-
-    fun reorderGoals(goalId: Int, newOrder: Int) {
-        viewModelScope.launch { dao.updateGoalOrder(goalId, newOrder) }
-    }
-
-    fun reorderTasks(taskId: Int, newOrder: Int) {
-        viewModelScope.launch { dao.updateTaskOrder(taskId, newOrder) }
+    sealed class ActionTarget {
+        data class GoalTarget(val goal: Goal) : ActionTarget()
+        data class TaskTarget(val task: Task) : ActionTarget()
+        val id: Int get() = when(this) { is GoalTarget -> goal.id; is TaskTarget -> task.id }
     }
 }
 

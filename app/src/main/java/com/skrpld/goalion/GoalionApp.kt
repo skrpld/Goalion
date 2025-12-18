@@ -2,7 +2,6 @@ package com.skrpld.goalion
 
 import android.app.Application
 import androidx.room.Room
-import com.skrpld.goalion.data.GoalRepository
 import com.skrpld.goalion.data.database.AppDatabase
 import com.skrpld.goalion.ui.screens.main.MainViewModel
 import org.koin.android.ext.koin.androidContext
@@ -23,8 +22,6 @@ class GoalionApp : Application() {
 val appModule = module {
     single { Room.databaseBuilder(get(), AppDatabase::class.java, "goalion.db").build() }
     single { get<AppDatabase>().appDao() }
-
-    single { GoalRepository(get()) }
 
     viewModel { MainViewModel(get()) }
 }

@@ -13,8 +13,8 @@ import com.skrpld.goalion.ui.components.main.GoalCard
 @Composable
 fun GoalsList(
     items: List<GoalListItem>,
-    editingId: Int?,
-    selectedActionId: Int?,
+    editingId: String?,
+    selectedActionItem: MainViewModel.ActionTarget?,
     onGoalToggle: (Int) -> Unit,
     onGoalLongClick: (Goal) -> Unit,
     onGoalDoubleClick: (Goal) -> Unit,
@@ -49,15 +49,14 @@ fun GoalsList(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(items = groupedItems, key = { (header, _) -> header.goal.id }) { (header, tasks) ->
+        items(items = groupedItems, key = { (header, _) -> "goal_${header.goal.id}" }) { (header, tasks) ->
             GoalCard(
                 goal = header.goal,
                 tasks = tasks,
                 isExpanded = header.isExpanded,
-                isEditing = editingId == header.goal.id,
-                isSelected = selectedActionId == header.goal.id,
+                isEditing = editingId == "goal_${header.goal.id}",
+                selectedTarget = selectedActionItem,
                 editingTaskId = editingId,
-                selectedTaskId = selectedActionId,
                 onToggle = { onGoalToggle(header.goal.id) },
                 onLongClick = { onGoalLongClick(header.goal) },
                 onDoubleClick = { onGoalDoubleClick(header.goal) },

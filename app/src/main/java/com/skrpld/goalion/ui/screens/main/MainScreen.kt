@@ -9,9 +9,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.skrpld.goalion.data.models.Task
+import com.skrpld.goalion.ui.components.main.TaskDetailsDialog
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -35,7 +34,12 @@ fun MainScreen(
                     }
                 },
                 onDelete = { viewModel.deleteCurrentTarget() },
-                onEdit = { selectedActionItem?.let { viewModel.startEditing(it.id) } },
+                onEdit = {
+                    selectedActionItem?.let { target ->
+                        val isGoal = target is MainViewModel.ActionTarget.GoalTarget
+                        viewModel.startEditing(target.id, isGoal)
+                    }
+                },
                 onPriority = { viewModel.cyclePriority() }
             )
         }
@@ -50,7 +54,7 @@ fun MainScreen(
                     GoalsList(
                         items = state.items,
                         editingId = editingId,
-                        selectedActionId = selectedActionItem?.id,
+                        selectedActionItem = selectedActionItem,
                         onGoalToggle = { viewModel.toggleGoalExpanded(it) },
                         onGoalLongClick = { viewModel.selectActionItem(MainViewModel.ActionTarget.GoalTarget(it)) },
                         onGoalDoubleClick = { viewModel.toggleStatus(MainViewModel.ActionTarget.GoalTarget(it)) },
@@ -113,34 +117,6 @@ fun ActionFabMenu(
         }
         FloatingActionButton(onClick = onAddGoal) {
             Icon(Icons.Default.Add, contentDescription = null)
-        }
-    }
-}
-
-@Composable
-fun TaskDetailsDialog(
-    task: Task,
-    onDismiss: () -> Unit,
-    onDescriptionChange: (String) -> Unit
-) {
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            shape = MaterialTheme.shapes.large
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(text = task.title, style = MaterialTheme.typography.headlineSmall)
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = task.description,
-                    onValueChange = onDescriptionChange,
-                    label = { Text("Description") },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp)
-                )
-                TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
-                    Text("Close")
-                }
-            }
         }
     }
 }

@@ -16,7 +16,7 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
     private val _selectedActionItem = MutableStateFlow<ActionTarget?>(null)
     val selectedActionItem = _selectedActionItem.asStateFlow()
 
-    private val _editingId = MutableStateFlow<Int?>(null)
+    private val _editingId = MutableStateFlow<String?>(null)
     val editingId = _editingId.asStateFlow()
 
     private val _selectedTaskForDetails = MutableStateFlow<Task?>(null)
@@ -69,7 +69,7 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
     fun addGoal(profileId: Int) {
         viewModelScope.launch {
             val id = dao.upsertGoal(Goal(title = "", profileId = profileId, orderIndex = 0)).toInt()
-            startEditing(id)
+            startEditing(id, isGoal = true)
         }
     }
 
@@ -77,12 +77,12 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
         viewModelScope.launch {
             val id = dao.upsertTask(Task(title = "", goalId = goalId, description = "", orderIndex = 0)).toInt()
             _expandedGoalIds.update { it + goalId }
-            startEditing(id)
+            startEditing(id, isGoal = false)
         }
     }
 
-    fun startEditing(id: Int) {
-        _editingId.value = id
+    fun startEditing(id: Int, isGoal: Boolean) {
+        _editingId.value = if (isGoal) "goal_$id" else "task_$id"
         _selectedActionItem.value = null
     }
 

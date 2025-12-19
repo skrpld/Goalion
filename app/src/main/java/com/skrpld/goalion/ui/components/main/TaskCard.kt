@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.unit.dp
 import com.skrpld.goalion.data.database.TaskStatus
 import com.skrpld.goalion.data.models.Task
@@ -31,26 +31,32 @@ fun TaskCard(
         else -> MaterialTheme.colorScheme.primary
     }
 
-    OutlinedCard(
+    ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
             .border(
-                width = if (isSelected) 2.dp else 0.dp,
-                color = if (isSelected) MaterialTheme.colorScheme.secondary else Color.Transparent,
-                shape = MaterialTheme.shapes.small
+                width = if (isSelected) 3.dp else 1.dp,
+                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
+                shape = MaterialTheme.shapes.medium
             )
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick,
                 onDoubleClick = onDoubleClick
             ),
-        colors = CardDefaults.outlinedCardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
-        Row(modifier = Modifier.height(IntrinsicSize.Min)) {
-            Box(modifier = Modifier.fillMaxHeight().width(4.dp).background(priorityColor))
-
+        Row(
+            modifier = Modifier
+                .drawBehind {
+                    drawRect(
+                        color = priorityColor,
+                        size = size.copy(width = 6.dp.toPx())
+                    )
+                }
+        ) {
             Box(modifier = Modifier.padding(12.dp)) {
                 EditableTitle(
                     title = task.title,
@@ -59,7 +65,7 @@ fun TaskCard(
                     onTitleChange = onTitleChange,
                     onEditDone = onEditDone,
                     textStyle = MaterialTheme.typography.bodyMedium,
-                    placeholder = "Новая задача"
+                    placeholder = "NewTask"
                 )
             }
         }

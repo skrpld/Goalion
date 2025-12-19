@@ -29,16 +29,26 @@ fun TaskDetailsDialog(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             shape = MaterialTheme.shapes.large
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(text = task.title, style = MaterialTheme.typography.headlineSmall)
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = task.title,
+                    style = MaterialTheme.typography.headlineSmall
+                )
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = task.description,
                     onValueChange = onDescriptionChange,
                     label = { Text("Description") },
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 100.dp)
                 )
-                TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
                     Text("Close")
                 }
             }

@@ -44,7 +44,11 @@ fun MainScreen(
             )
         }
     ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
             when (val state = uiState) {
                 is MainViewModel.MainUiState.Loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
                 is MainViewModel.MainUiState.Empty -> {
@@ -97,13 +101,18 @@ fun ActionFabMenu(
     onEdit: () -> Unit,
     onPriority: () -> Unit
 ) {
-    Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(
+        horizontalAlignment = Alignment.End,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         AnimatedVisibility(
             visible = selectedTarget != null,
             enter = expandVertically() + fadeIn(),
             exit = shrinkVertically() + fadeOut()
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 SmallFloatingActionButton(onClick = onDelete, containerColor = MaterialTheme.colorScheme.errorContainer) {
                     Icon(Icons.Default.Delete, contentDescription = null)
                 }

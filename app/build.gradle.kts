@@ -75,4 +75,6 @@ dependencies {
 
     implementation(libs.androidx.compose.foundation)
     implementation(platform(libs.androidx.compose.bom))
+
+    implementation(libs.accompanist.permissions)
 }

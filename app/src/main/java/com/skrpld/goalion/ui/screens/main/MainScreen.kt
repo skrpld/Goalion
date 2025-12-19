@@ -1,5 +1,7 @@
 package com.skrpld.goalion.ui.screens.main
 
+import android.Manifest
+import android.os.Build
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -7,12 +9,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import com.skrpld.goalion.ui.components.main.ActionFabMenu
 import com.skrpld.goalion.ui.components.main.GoalsList
 import com.skrpld.goalion.ui.components.main.TaskDetailsDialog
 import org.koin.androidx.compose.koinViewModel
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun MainScreen(
     viewModel: MainViewModel = koinViewModel()
@@ -21,11 +28,22 @@ fun MainScreen(
     val selectedActionItem by viewModel.selectedActionItem.collectAsStateWithLifecycle()
     val selectedTaskForDetails by viewModel.selectedTaskForDetails.collectAsStateWithLifecycle()
     val editingId by viewModel.editingId.collectAsStateWithLifecycle()
+    val pinnedGoalIds by viewModel.pinnedGoalIds.collectAsStateWithLifecycle()
+
+    val currentContext = LocalContext.current
+
+    // Состояние разрешения (только для Android 13+)
+    val notificationPermissionState = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        rememberPermissionState(Manifest.permission.POST_NOTIFICATIONS)
+    } else {
+        null
+    }
 
     Scaffold(
         floatingActionButton = {
             ActionFabMenu(
                 selectedTarget = selectedActionItem,
+                pinnedGoalIds = pinnedGoalIds,
                 onAddGoal = {
                     when (val state = uiState) {
                         is MainViewModel.MainUiState.Success -> viewModel.addGoal(state.profileId)
@@ -40,7 +58,15 @@ fun MainScreen(
                         viewModel.startEditing(target.id, isGoal)
                     }
                 },
-                onPriority = { viewModel.cyclePriority() }
+                onPriority = { viewModel.cyclePriority() },
+                onPin = {
+                    // Логика проверки разрешения перед пином
+                    if (notificationPermissionState != null && !notificationPermissionState.status.isGranted) {
+                        notificationPermissionState.launchPermissionRequest()
+                    } else {
+                        viewModel.togglePinGoal(currentContext)
+                    }
+                }
             )
         }
     ) { paddingValues ->

@@ -1,10 +1,12 @@
 package com.skrpld.goalion.ui.screens.main
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.skrpld.goalion.data.database.AppDao
 import com.skrpld.goalion.data.database.TaskStatus
 import com.skrpld.goalion.data.models.*
+import com.skrpld.goalion.util.NotificationHelper
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
@@ -31,6 +33,10 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
     val selectedTaskForDetails = _selectedTaskForDetails.asStateFlow()
 
     private val _expandedGoalIds = MutableStateFlow<Set<Int>>(emptySet())
+
+    // Храним ID закрепленных целей (в реальном приложении лучше сохранять в Prefs/DB)
+    private val _pinnedGoalIds = MutableStateFlow<Set<Int>>(emptySet())
+    val pinnedGoalIds = _pinnedGoalIds.asStateFlow()
 
     private var prioritySaveJob: Job? = null
 
@@ -87,6 +93,27 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
 
     private fun now() = System.currentTimeMillis()
 
+    // --- Actions ---
+
+    fun togglePinGoal(androidContext: Context) {
+        val target = _selectedActionItem.value as? ActionTarget.GoalTarget ?: return
+        val goalId = target.goal.id
+        val helper = NotificationHelper(androidContext)
+
+        if (_pinnedGoalIds.value.contains(goalId)) {
+            helper.dismissNotification(goalId)
+            _pinnedGoalIds.update { it - goalId }
+        } else {
+            val state = uiState.value
+            if (state is MainUiState.Success) {
+                state.rawData.find { it.goal.id == goalId }?.let {
+                    helper.showGoalNotification(it)
+                    _pinnedGoalIds.update { it + goalId }
+                }
+            }
+        }
+        _selectedActionItem.value = null
+    }
     fun addGoal(profileId: Int) {
         viewModelScope.launch {
             val id = dao.upsertGoal(Goal(title = "", profileId = profileId, updatedAt = now())).toInt()
@@ -167,7 +194,10 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
 
     fun deleteCurrentTarget() = viewModelScope.launch {
         when (val current = _selectedActionItem.value) {
-            is ActionTarget.GoalTarget -> dao.deleteGoal(current.goal)
+            is ActionTarget.GoalTarget -> {
+                dao.deleteGoal(current.goal)
+                _pinnedGoalIds.update { it - current.goal.id }
+            }
             is ActionTarget.TaskTarget -> dao.deleteTask(current.task)
             null -> {}
         }

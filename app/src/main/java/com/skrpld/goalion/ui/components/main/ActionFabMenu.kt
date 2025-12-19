@@ -14,10 +14,12 @@ import com.skrpld.goalion.ui.screens.main.MainViewModel
 @Composable
 fun ActionFabMenu(
     selectedTarget: MainViewModel.ActionTarget?,
+    pinnedGoalIds: Set<Int>,
     onAddGoal: () -> Unit,
     onDelete: () -> Unit,
     onEdit: () -> Unit,
-    onPriority: () -> Unit
+    onPriority: () -> Unit,
+    onPin: () -> Unit
 ) {
     Column(
         horizontalAlignment = Alignment.End,
@@ -32,6 +34,16 @@ fun ActionFabMenu(
                 SmallFabWithStyle(onClick = onDelete, icon = Icons.Default.Delete, isError = true)
                 SmallFabWithStyle(onClick = onEdit, icon = Icons.Default.Edit)
                 SmallFabWithStyle(onClick = onPriority, icon = Icons.Default.PriorityHigh)
+
+                if (selectedTarget is MainViewModel.ActionTarget.GoalTarget) {
+                    val isPinned = pinnedGoalIds.contains(selectedTarget.goal.id)
+                    SmallFabWithStyle(
+                        onClick = onPin,
+                        icon = if (isPinned) Icons.Default.PushPin else Icons.Default.PushPin, // Можно менять иконку
+                        isError = false,
+                        tint = if (isPinned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
         }
 
@@ -47,7 +59,12 @@ fun ActionFabMenu(
 }
 
 @Composable
-fun SmallFabWithStyle(onClick: () -> Unit, icon: androidx.compose.ui.graphics.vector.ImageVector, isError: Boolean = false) {
+fun SmallFabWithStyle(
+    onClick: () -> Unit,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    isError: Boolean = false,
+    tint: androidx.compose.ui.graphics.Color? = null
+) {
     GoalionCard(
         onClick = onClick,
         modifier = Modifier.size(40.dp)
@@ -57,7 +74,7 @@ fun SmallFabWithStyle(onClick: () -> Unit, icon: androidx.compose.ui.graphics.ve
                 icon,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
-                tint = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                tint = tint ?: (if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface)
             )
         }
     }

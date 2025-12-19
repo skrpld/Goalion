@@ -59,7 +59,7 @@ fun GoalsList(
         itemsIndexed(
             items = groupedData,
             key = { _, triple -> "goal_${triple.first.goal.id}" }
-        ) { index, (header, tasks, _) ->
+        ) { _, (header, tasks, _) ->
             GoalCard(
                 goal = header.goal,
                 tasks = tasks,

@@ -45,14 +45,25 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
             if (goalsWithTasks.isEmpty()) {
                 MainUiState.Empty(profile.id)
             } else {
-                val sortedGoals = goalsWithTasks.sortedBy { it.goal.orderIndex }
-                val flatList = mutableListOf<GoalListItem>()
+                // 1. Сортировка ЦЕЛЕЙ: Сначала TODO, потом Приоритет (0-High), потом Индекс
+                val sortedGoals = goalsWithTasks.sortedWith(
+                    compareBy<GoalWithTasks> { it.goal.status == TaskStatus.DONE }
+                        .thenBy { it.goal.priority }
+                        .thenBy { it.goal.orderIndex }
+                )
 
+                val flatList = mutableListOf<GoalListItem>()
                 sortedGoals.forEach { item ->
                     val isExpanded = expandedIds.contains(item.goal.id)
                     flatList.add(GoalListItem.GoalHeader(item.goal, isExpanded))
+
                     if (isExpanded) {
-                        val sortedTasks = item.tasks.sortedBy { it.orderIndex }
+                        // 2. Сортировка ЗАДАЧ внутри: Сначала TODO, потом Приоритет, потом Индекс
+                        val sortedTasks = item.tasks.sortedWith(
+                            compareBy<Task> { it.status == TaskStatus.DONE }
+                                .thenBy { it.priority }
+                                .thenBy { it.orderIndex }
+                        )
                         flatList.addAll(sortedTasks.map { GoalListItem.TaskItem(it) })
                     }
                 }
@@ -71,38 +82,37 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
         data class Empty(val profileId: Int) : MainUiState()
     }
 
-    // --- Sorting and moving ---
-
     fun moveGoal(fromIndex: Int, toIndex: Int) {
         val state = uiState.value as? MainUiState.Success ?: return
-        val list = state.rawData.map { it.goal }.toMutableList()
+        val list = state.rawData.toMutableList()
         if (fromIndex !in list.indices || toIndex !in list.indices) return
 
         Collections.swap(list, fromIndex, toIndex)
-
         viewModelScope.launch {
-            list.forEachIndexed { index, goal ->
-                dao.upsertGoal(goal.copy(orderIndex = index))
+            list.forEachIndexed { index, item ->
+                if (item.goal.orderIndex != index) {
+                    dao.upsertGoal(item.goal.copy(orderIndex = index))
+                }
             }
         }
     }
 
     fun moveTask(goalId: Int, fromIndex: Int, toIndex: Int) {
         val state = uiState.value as? MainUiState.Success ?: return
-        val goalWithTasks = state.rawData.find { it.goal.id == goalId } ?: return
-        val tasks = goalWithTasks.tasks.sortedBy { it.orderIndex }.toMutableList()
+        val goalData = state.rawData.find { it.goal.id == goalId } ?: return
+        val tasks = goalData.tasks.toMutableList()
 
         if (fromIndex !in tasks.indices || toIndex !in tasks.indices) return
         Collections.swap(tasks, fromIndex, toIndex)
 
         viewModelScope.launch {
             tasks.forEachIndexed { index, task ->
-                dao.upsertTask(task.copy(orderIndex = index))
+                if (task.orderIndex != index) {
+                    dao.upsertTask(task.copy(orderIndex = index))
+                }
             }
         }
     }
-
-    // --- Actions ---
 
     fun addGoal(profileId: Int) {
         viewModelScope.launch {
@@ -174,7 +184,7 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
         }
         _selectedActionItem.value = updated
         prioritySaveJob = viewModelScope.launch {
-            delay(1000)
+            delay(500)
             when (val target = _selectedActionItem.value) {
                 is ActionTarget.GoalTarget -> dao.upsertGoal(target.goal)
                 is ActionTarget.TaskTarget -> dao.upsertTask(target.task)

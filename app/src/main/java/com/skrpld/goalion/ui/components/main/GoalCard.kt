@@ -108,8 +108,7 @@ fun GoalCard(
                             onEditDone = onEditDone,
                             onClick = { onTaskClick(task) },
                             onLongClick = { onTaskLongClick(task) },
-                            onDoubleClick = { onTaskDoubleClick(task) },
-                            modifier = Modifier
+                            onDoubleClick = { onTaskDoubleClick(task) }
                         )
                     }
 

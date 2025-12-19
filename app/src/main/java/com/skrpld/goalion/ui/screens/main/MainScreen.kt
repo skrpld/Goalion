@@ -63,7 +63,7 @@ fun MainScreen(
                 }
                 is MainViewModel.MainUiState.Success -> {
                     GoalsList(
-                        items = state.items,
+                        headers = state.items,
                         editingId = editingId,
                         selectedActionItem = selectedActionItem,
                         onGoalToggle = { viewModel.toggleGoalExpanded(it) },
@@ -75,12 +75,12 @@ fun MainScreen(
                         onAddTask = { goalId -> viewModel.addTask(goalId) },
                         onTitleChange = { id, title, isGoal ->
                             if (isGoal) {
-                                (state.items.find { it is GoalListItem.GoalHeader && it.goal.id == id } as? GoalListItem.GoalHeader)?.let {
+                                state.items.find { it.goal.id == id }?.let {
                                     viewModel.updateGoalTitle(it.goal, title)
                                 }
                             } else {
-                                (state.items.find { it is GoalListItem.TaskItem && it.task.id == id } as? GoalListItem.TaskItem)?.let {
-                                    viewModel.updateTaskTitle(it.task, title)
+                                state.items.flatMap { it.tasks }.find { it.id == id }?.let {
+                                    viewModel.updateTaskTitle(it, title)
                                 }
                             }
                         },

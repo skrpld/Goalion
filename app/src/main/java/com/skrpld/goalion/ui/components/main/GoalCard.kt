@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.skrpld.goalion.data.database.TaskStatus
 import com.skrpld.goalion.data.models.Goal
@@ -50,10 +51,12 @@ fun GoalCard(
         else -> MaterialTheme.colorScheme.primary
     }
 
+    val syncSpring = remember { spring<IntSize>(dampingRatio = 0.8f, stiffness = 300f) }
+
     ElevatedCard(
         modifier = modifier
             .fillMaxWidth()
-            .animateContentSize(animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f))
+            .animateContentSize(animationSpec = syncSpring) // Двигает соседей
             .border(
                 width = if (isGoalSelected) 2.dp else 0.dp,
                 color = if (isGoalSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
@@ -63,7 +66,16 @@ fun GoalCard(
             containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
-        Column {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .drawBehind {
+                    drawRect(
+                        color = priorityColor,
+                        size = size.copy(width = 6.dp.toPx())
+                    )
+                }
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -72,10 +84,8 @@ fun GoalCard(
                         onLongClick = onLongClick,
                         onDoubleClick = onDoubleClick
                     )
-                    .drawBehind {
-                        drawRect(color = priorityColor, size = size.copy(width = 6.dp.toPx()))
-                    }
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .padding(start = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 EditableTitle(
@@ -91,11 +101,12 @@ fun GoalCard(
 
             AnimatedVisibility(
                 visible = isExpanded,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
+                enter = expandVertically(animationSpec = syncSpring) + fadeIn(),
+                exit = shrinkVertically(animationSpec = syncSpring) + fadeOut()
             ) {
                 Column(
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                    modifier = Modifier
+                        .padding(start = 24.dp, end = 16.dp, bottom = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     tasks.forEach { task ->

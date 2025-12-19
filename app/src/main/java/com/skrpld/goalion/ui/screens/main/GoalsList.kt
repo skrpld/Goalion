@@ -1,8 +1,9 @@
 package com.skrpld.goalion.ui.screens.main
 
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -12,7 +13,7 @@ import com.skrpld.goalion.ui.components.main.GoalCard
 
 @Composable
 fun GoalsList(
-    items: List<GoalListItem>,
+    headers: List<GoalListItem.GoalHeader>,
     editingId: String?,
     selectedActionItem: MainViewModel.ActionTarget?,
     onGoalToggle: (Int) -> Unit,
@@ -27,42 +28,18 @@ fun GoalsList(
     onMoveGoal: (Int, Int) -> Unit,
     onMoveTask: (Int, Int, Int) -> Unit
 ) {
-    val groupedData = remember(items) {
-        val result = mutableListOf<Triple<GoalListItem.GoalHeader, List<Task>, Int>>()
-        var currentGoalHeader: GoalListItem.GoalHeader? = null
-        var currentTasks = mutableListOf<Task>()
-        var goalIndex = 0
-
-        items.forEach { item ->
-            when (item) {
-                is GoalListItem.GoalHeader -> {
-                    if (currentGoalHeader != null) {
-                        result.add(Triple(currentGoalHeader!!, currentTasks.toList(), goalIndex++))
-                    }
-                    currentGoalHeader = item
-                    currentTasks = mutableListOf()
-                }
-                is GoalListItem.TaskItem -> {
-                    currentTasks.add(item.task)
-                }
-            }
-        }
-        currentGoalHeader?.let { result.add(Triple(it, currentTasks.toList(), goalIndex)) }
-        result
-    }
-
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        itemsIndexed(
-            items = groupedData,
-            key = { _, triple -> "goal_${triple.first.goal.id}" }
-        ) { _, (header, tasks, _) ->
+        items(
+            items = headers,
+            key = { it.goal.id }
+        ) { header ->
             GoalCard(
                 goal = header.goal,
-                tasks = tasks,
+                tasks = header.tasks,
                 isExpanded = header.isExpanded,
                 isEditing = editingId == "goal_${header.goal.id}",
                 selectedTarget = selectedActionItem,
@@ -78,7 +55,12 @@ fun GoalsList(
                 onTaskTitleChange = { id, title -> onTitleChange(id, title, false) },
                 onEditDone = onEditDone,
                 onMoveTask = { from, to -> onMoveTask(header.goal.id, from, to) },
-                modifier = Modifier.animateItem()
+                modifier = Modifier.animateItem(
+                    placementSpec = spring(
+                        dampingRatio = 0.8f,
+                        stiffness = 300f
+                    )
+                )
             )
         }
     }

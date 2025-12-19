@@ -45,29 +45,25 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
             if (goalsWithTasks.isEmpty()) {
                 MainUiState.Empty(profile.id)
             } else {
-                // 1. Сортировка ЦЕЛЕЙ: Сначала TODO, потом Приоритет (0-High), потом Индекс
                 val sortedGoals = goalsWithTasks.sortedWith(
                     compareBy<GoalWithTasks> { it.goal.status == TaskStatus.DONE }
                         .thenBy { it.goal.priority }
                         .thenBy { it.goal.orderIndex }
                 )
 
-                val flatList = mutableListOf<GoalListItem>()
-                sortedGoals.forEach { item ->
-                    val isExpanded = expandedIds.contains(item.goal.id)
-                    flatList.add(GoalListItem.GoalHeader(item.goal, isExpanded))
-
-                    if (isExpanded) {
-                        // 2. Сортировка ЗАДАЧ внутри: Сначала TODO, потом Приоритет, потом Индекс
-                        val sortedTasks = item.tasks.sortedWith(
-                            compareBy<Task> { it.status == TaskStatus.DONE }
-                                .thenBy { it.priority }
-                                .thenBy { it.orderIndex }
-                        )
-                        flatList.addAll(sortedTasks.map { GoalListItem.TaskItem(it) })
-                    }
+                val items = sortedGoals.map { item ->
+                    val sortedTasks = item.tasks.sortedWith(
+                        compareBy<Task> { it.status == TaskStatus.DONE }
+                            .thenBy { it.priority }
+                            .thenBy { it.orderIndex }
+                    )
+                    GoalListItem.GoalHeader(
+                        goal = item.goal,
+                        tasks = sortedTasks, // Задачи теперь внутри хедера!
+                        isExpanded = expandedIds.contains(item.goal.id)
+                    )
                 }
-                MainUiState.Success(flatList, profile.id, sortedGoals)
+                MainUiState.Success(items, profile.id, sortedGoals)
             }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MainUiState.Loading)
@@ -75,7 +71,7 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
     sealed class MainUiState {
         object Loading : MainUiState()
         data class Success(
-            val items: List<GoalListItem>,
+            val items: List<GoalListItem.GoalHeader>,
             val profileId: Int,
             val rawData: List<GoalWithTasks>
         ) : MainUiState()
@@ -210,6 +206,10 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
 }
 
 sealed class GoalListItem {
-    data class GoalHeader(val goal: Goal, val isExpanded: Boolean) : GoalListItem()
+    data class GoalHeader(
+        val goal: Goal,
+        val tasks: List<Task> = emptyList(),
+        val isExpanded: Boolean = false
+    ) : GoalListItem()
     data class TaskItem(val task: Task) : GoalListItem()
 }

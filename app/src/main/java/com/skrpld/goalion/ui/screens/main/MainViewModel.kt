@@ -10,6 +10,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.util.Collections
 
 class MainViewModel(private val dao: AppDao) : ViewModel() {
 
@@ -44,8 +45,10 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
             if (goalsWithTasks.isEmpty()) {
                 MainUiState.Empty(profile.id)
             } else {
+                val sortedGoals = goalsWithTasks.sortedBy { it.goal.orderIndex }
                 val flatList = mutableListOf<GoalListItem>()
-                goalsWithTasks.forEach { item ->
+
+                sortedGoals.forEach { item ->
                     val isExpanded = expandedIds.contains(item.goal.id)
                     flatList.add(GoalListItem.GoalHeader(item.goal, isExpanded))
                     if (isExpanded) {
@@ -53,29 +56,70 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
                         flatList.addAll(sortedTasks.map { GoalListItem.TaskItem(it) })
                     }
                 }
-                MainUiState.Success(flatList, profile.id)
+                MainUiState.Success(flatList, profile.id, sortedGoals)
             }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MainUiState.Loading)
 
     sealed class MainUiState {
         object Loading : MainUiState()
-        data class Success(val items: List<GoalListItem>, val profileId: Int) : MainUiState()
+        data class Success(
+            val items: List<GoalListItem>,
+            val profileId: Int,
+            val rawData: List<GoalWithTasks>
+        ) : MainUiState()
         data class Empty(val profileId: Int) : MainUiState()
+    }
+
+    // --- Sorting and moving ---
+
+    fun moveGoal(fromIndex: Int, toIndex: Int) {
+        val state = uiState.value as? MainUiState.Success ?: return
+        val list = state.rawData.map { it.goal }.toMutableList()
+        if (fromIndex !in list.indices || toIndex !in list.indices) return
+
+        Collections.swap(list, fromIndex, toIndex)
+
+        viewModelScope.launch {
+            list.forEachIndexed { index, goal ->
+                dao.upsertGoal(goal.copy(orderIndex = index))
+            }
+        }
+    }
+
+    fun moveTask(goalId: Int, fromIndex: Int, toIndex: Int) {
+        val state = uiState.value as? MainUiState.Success ?: return
+        val goalWithTasks = state.rawData.find { it.goal.id == goalId } ?: return
+        val tasks = goalWithTasks.tasks.sortedBy { it.orderIndex }.toMutableList()
+
+        if (fromIndex !in tasks.indices || toIndex !in tasks.indices) return
+        Collections.swap(tasks, fromIndex, toIndex)
+
+        viewModelScope.launch {
+            tasks.forEachIndexed { index, task ->
+                dao.upsertTask(task.copy(orderIndex = index))
+            }
+        }
     }
 
     // --- Actions ---
 
     fun addGoal(profileId: Int) {
         viewModelScope.launch {
-            val id = dao.upsertGoal(Goal(title = "", profileId = profileId, orderIndex = 0)).toInt()
+            val state = uiState.value as? MainUiState.Success
+            val maxOrder = state?.rawData?.maxOfOrNull { it.goal.orderIndex } ?: -1
+            val id = dao.upsertGoal(Goal(title = "", profileId = profileId, orderIndex = maxOrder + 1)).toInt()
             startEditing(id, isGoal = true)
         }
     }
 
     fun addTask(goalId: Int) {
         viewModelScope.launch {
-            val id = dao.upsertTask(Task(title = "", goalId = goalId, description = "", orderIndex = 0)).toInt()
+            val state = uiState.value as? MainUiState.Success
+            val goalData = state?.rawData?.find { it.goal.id == goalId }
+            val maxOrder = goalData?.tasks?.maxOfOrNull { it.orderIndex } ?: -1
+
+            val id = dao.upsertTask(Task(title = "", goalId = goalId, description = "", orderIndex = maxOrder + 1)).toInt()
             _expandedGoalIds.update { it + goalId }
             startEditing(id, isGoal = false)
         }
@@ -130,7 +174,7 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
         }
         _selectedActionItem.value = updated
         prioritySaveJob = viewModelScope.launch {
-            delay(1500)
+            delay(1000)
             when (val target = _selectedActionItem.value) {
                 is ActionTarget.GoalTarget -> dao.upsertGoal(target.goal)
                 is ActionTarget.TaskTarget -> dao.upsertTask(target.task)

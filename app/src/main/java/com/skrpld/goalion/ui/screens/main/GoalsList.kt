@@ -2,7 +2,7 @@ package com.skrpld.goalion.ui.screens.main
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -23,25 +23,32 @@ fun GoalsList(
     onTaskDoubleClick: (Task) -> Unit,
     onAddTask: (Int) -> Unit,
     onTitleChange: (Int, String, Boolean) -> Unit,
-    onEditDone: () -> Unit
+    onEditDone: () -> Unit,
+    onMoveGoal: (Int, Int) -> Unit,
+    onMoveTask: (Int, Int, Int) -> Unit
 ) {
-    val groupedItems = remember(items) {
-        val list = mutableListOf<Pair<GoalListItem.GoalHeader, List<Task>>>()
-        var currentGoal: GoalListItem.GoalHeader? = null
+    val groupedData = remember(items) {
+        val result = mutableListOf<Triple<GoalListItem.GoalHeader, List<Task>, Int>>()
+        var currentGoalHeader: GoalListItem.GoalHeader? = null
         var currentTasks = mutableListOf<Task>()
+        var goalIndex = 0
 
         items.forEach { item ->
             when (item) {
                 is GoalListItem.GoalHeader -> {
-                    if (currentGoal != null) list.add(currentGoal to currentTasks)
-                    currentGoal = item
+                    if (currentGoalHeader != null) {
+                        result.add(Triple(currentGoalHeader!!, currentTasks.toList(), goalIndex++))
+                    }
+                    currentGoalHeader = item
                     currentTasks = mutableListOf()
                 }
-                is GoalListItem.TaskItem -> currentTasks.add(item.task)
+                is GoalListItem.TaskItem -> {
+                    currentTasks.add(item.task)
+                }
             }
         }
-        currentGoal?.let { list.add(it to currentTasks) }
-        list
+        currentGoalHeader?.let { result.add(Triple(it, currentTasks.toList(), goalIndex)) }
+        result
     }
 
     LazyColumn(
@@ -49,7 +56,10 @@ fun GoalsList(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(items = groupedItems, key = { (header, _) -> "goal_${header.goal.id}" }) { (header, tasks) ->
+        itemsIndexed(
+            items = groupedData,
+            key = { _, triple -> "goal_${triple.first.goal.id}" }
+        ) { index, (header, tasks, _) ->
             GoalCard(
                 goal = header.goal,
                 tasks = tasks,
@@ -67,6 +77,7 @@ fun GoalsList(
                 onTitleChange = { onTitleChange(header.goal.id, it, true) },
                 onTaskTitleChange = { id, title -> onTitleChange(id, title, false) },
                 onEditDone = onEditDone,
+                onMoveTask = { from, to -> onMoveTask(header.goal.id, from, to) },
                 modifier = Modifier.animateItem()
             )
         }

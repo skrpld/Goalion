@@ -1,6 +1,8 @@
 package com.skrpld.goalion.ui.screens.main
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -48,6 +50,11 @@ fun MainScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = { viewModel.selectActionItem(null) }
+                )
         ) {
             when (val state = uiState) {
                 is MainViewModel.MainUiState.Loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
@@ -77,7 +84,9 @@ fun MainScreen(
                                 }
                             }
                         },
-                        onEditDone = { viewModel.stopEditing() }
+                        onEditDone = { viewModel.stopEditing() },
+                        onMoveGoal = viewModel::moveGoal,
+                        onMoveTask = viewModel::moveTask
                     )
                 }
             }
@@ -87,7 +96,7 @@ fun MainScreen(
             TaskDetailsDialog(
                 task = task,
                 onDismiss = { viewModel.showTaskDetails(null) },
-                onDescriptionChange = { viewModel.updateTaskDescription(task, it) }
+                onSaveDescription = { viewModel.updateTaskDescription(task, it) }
             )
         }
     }
@@ -111,7 +120,8 @@ fun ActionFabMenu(
             exit = shrinkVertically() + fadeOut()
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalAlignment = Alignment.End
             ) {
                 SmallFloatingActionButton(onClick = onDelete, containerColor = MaterialTheme.colorScheme.errorContainer) {
                     Icon(Icons.Default.Delete, contentDescription = null)

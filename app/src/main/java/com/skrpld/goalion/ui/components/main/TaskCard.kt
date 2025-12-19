@@ -1,7 +1,6 @@
 package com.skrpld.goalion.ui.components.main
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -9,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.skrpld.goalion.data.database.TaskStatus
 import com.skrpld.goalion.data.models.Task
@@ -23,7 +23,8 @@ fun TaskCard(
     onEditDone: () -> Unit,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    onDoubleClick: () -> Unit
+    onDoubleClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val priorityColor = when(task.priority) {
         0 -> MaterialTheme.colorScheme.error
@@ -31,43 +32,39 @@ fun TaskCard(
         else -> MaterialTheme.colorScheme.primary
     }
 
-    ElevatedCard(
-        modifier = Modifier
+    Card(
+        modifier = modifier
             .fillMaxWidth()
             .border(
-                width = if (isSelected) 3.dp else 1.dp,
-                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
-                shape = MaterialTheme.shapes.medium
-            )
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick,
-                onDoubleClick = onDoubleClick
+                width = if (isSelected) 2.dp else 0.dp,
+                color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                shape = MaterialTheme.shapes.small
             ),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         )
     ) {
         Row(
             modifier = Modifier
-                .drawBehind {
-                    drawRect(
-                        color = priorityColor,
-                        size = size.copy(width = 6.dp.toPx())
-                    )
-                }
-        ) {
-            Box(modifier = Modifier.padding(12.dp)) {
-                EditableTitle(
-                    title = task.title,
-                    isEditing = isEditing,
-                    isDone = task.status == TaskStatus.DONE,
-                    onTitleChange = onTitleChange,
-                    onEditDone = onEditDone,
-                    textStyle = MaterialTheme.typography.bodyMedium,
-                    placeholder = "NewTask"
+                .combinedClickable(
+                    onClick = onClick,
+                    onLongClick = onLongClick,
+                    onDoubleClick = onDoubleClick
                 )
-            }
+                .drawBehind {
+                    drawRect(color = priorityColor, size = size.copy(width = 4.dp.toPx()))
+                }
+                .padding(12.dp)
+        ) {
+            EditableTitle(
+                title = task.title,
+                isEditing = isEditing,
+                isDone = task.status == TaskStatus.DONE,
+                onTitleChange = onTitleChange,
+                onEditDone = onEditDone,
+                textStyle = MaterialTheme.typography.bodyMedium,
+                placeholder = "Task title..."
+            )
         }
     }
 }

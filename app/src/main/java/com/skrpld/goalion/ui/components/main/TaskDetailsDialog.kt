@@ -1,17 +1,8 @@
 package com.skrpld.goalion.ui.components.main
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -22,34 +13,47 @@ import com.skrpld.goalion.data.models.Task
 fun TaskDetailsDialog(
     task: Task,
     onDismiss: () -> Unit,
-    onDescriptionChange: (String) -> Unit
+    onSaveDescription: (String) -> Unit
 ) {
-    Dialog(onDismissRequest = onDismiss) {
+    // Используем локальное состояние, чтобы текст печатался плавно
+    var localDescription by remember(task.id) { mutableStateOf(task.description) }
+
+    Dialog(onDismissRequest = {
+        onSaveDescription(localDescription)
+        onDismiss()
+    }) {
         Card(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             shape = MaterialTheme.shapes.large
         ) {
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = task.title,
+                    text = task.title.ifEmpty { "No Title" },
                     style = MaterialTheme.typography.headlineSmall
                 )
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(16.dp))
                 OutlinedTextField(
-                    value = task.description,
-                    onValueChange = onDescriptionChange,
+                    value = localDescription,
+                    onValueChange = { localDescription = it },
                     label = { Text("Description") },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 100.dp)
+                        .heightIn(min = 150.dp),
+                    textStyle = MaterialTheme.typography.bodyMedium
                 )
+                Spacer(Modifier.height(8.dp))
                 TextButton(
-                    onClick = onDismiss,
+                    onClick = {
+                        onSaveDescription(localDescription)
+                        onDismiss()
+                    },
                     modifier = Modifier.align(Alignment.End)
                 ) {
-                    Text("Close")
+                    Text("Save & Close")
                 }
             }
         }

@@ -1,14 +1,11 @@
 package com.skrpld.goalion.ui.components.main
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
@@ -16,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.skrpld.goalion.data.database.TaskStatus
 import com.skrpld.goalion.data.models.Goal
@@ -41,6 +39,7 @@ fun GoalCard(
     onTitleChange: (String) -> Unit,
     onTaskTitleChange: (Int, String) -> Unit,
     onEditDone: () -> Unit,
+    onMoveTask: (Int, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val isGoalSelected = selectedTarget is MainViewModel.ActionTarget.GoalTarget && selectedTarget.goal.id == goal.id
@@ -54,33 +53,28 @@ fun GoalCard(
     ElevatedCard(
         modifier = modifier
             .fillMaxWidth()
-            .animateContentSize(animationSpec = spring(stiffness = Spring.StiffnessLow))
+            .animateContentSize(animationSpec = spring(dampingRatio = 0.8f, stiffness = 400f))
             .border(
-                width = if (isGoalSelected) 3.dp else 1.dp,
-                color = if (isGoalSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
+                width = if (isGoalSelected) 2.dp else 0.dp,
+                color = if (isGoalSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
                 shape = MaterialTheme.shapes.medium
             ),
         colors = CardDefaults.elevatedCardColors(
             containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
-        Column(
-            modifier = Modifier
-                .combinedClickable(
-                    onClick = onToggle,
-                    onLongClick = onLongClick,
-                    onDoubleClick = onDoubleClick
-                )
-                .drawBehind {
-                    drawRect(
-                        color = priorityColor,
-                        size = size.copy(width = 6.dp.toPx())
-                    )
-                }
-        ) {
+        Column {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .combinedClickable(
+                        onClick = onToggle,
+                        onLongClick = onLongClick,
+                        onDoubleClick = onDoubleClick
+                    )
+                    .drawBehind {
+                        drawRect(color = priorityColor, size = size.copy(width = 6.dp.toPx()))
+                    }
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -91,17 +85,17 @@ fun GoalCard(
                     onTitleChange = onTitleChange,
                     onEditDone = onEditDone,
                     textStyle = MaterialTheme.typography.titleMedium,
-                    placeholder = "New goal"
+                    placeholder = "Goal title..."
                 )
             }
 
             AnimatedVisibility(
                 visible = isExpanded,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
             ) {
                 Column(
-                    modifier = Modifier.padding(start = 12.dp, end = 16.dp, bottom = 16.dp),
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     tasks.forEach { task ->
@@ -114,32 +108,20 @@ fun GoalCard(
                             onEditDone = onEditDone,
                             onClick = { onTaskClick(task) },
                             onLongClick = { onTaskLongClick(task) },
-                            onDoubleClick = { onTaskDoubleClick(task) }
+                            onDoubleClick = { onTaskDoubleClick(task) },
+                            modifier = Modifier
                         )
                     }
 
-                    ElevatedCard(
+                    OutlinedButton(
                         onClick = onAddSubTask,
-                        modifier = Modifier.fillMaxWidth()
-                            .border(
-                                width = 1.dp,
-                                color = MaterialTheme.colorScheme.secondary,
-                                shape = MaterialTheme.shapes.medium
-                            ),
-                        colors = CardDefaults.elevatedCardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        )
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.medium,
+                        contentPadding = PaddingValues(8.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text("Add task", style = MaterialTheme.typography.labelLarge)
-                            Spacer(Modifier.width(24.dp))
-                        }
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Add task")
                     }
                 }
             }

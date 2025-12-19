@@ -6,7 +6,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.skrpld.goalion.data.models.Goal
 import com.skrpld.goalion.data.models.Task
@@ -25,15 +24,8 @@ fun GoalsList(
     onTaskDoubleClick: (Task) -> Unit,
     onAddTask: (Int) -> Unit,
     onTitleChange: (Int, String, Boolean) -> Unit,
-    onEditDone: () -> Unit,
-    onMoveGoal: (Int, Int) -> Unit,
-    onMoveTask: (Int, Int, Int) -> Unit
+    onEditDone: () -> Unit
 ) {
-    val placementSpringSpec = spring<IntOffset>(
-        dampingRatio = 0.8f,
-        stiffness = 1000f
-    )
-
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -60,11 +52,8 @@ fun GoalsList(
                 onTitleChange = { onTitleChange(header.goal.id, it, true) },
                 onTaskTitleChange = { id, title -> onTitleChange(id, title, false) },
                 onEditDone = onEditDone,
-                onMoveTask = { from, to -> onMoveTask(header.goal.id, from, to) },
                 modifier = Modifier.animateItem(
-                    placementSpec = placementSpringSpec,
-                    fadeInSpec = spring(dampingRatio = 0.8f, stiffness = 300f),
-                    fadeOutSpec = spring(dampingRatio = 0.8f, stiffness = 300f)
+                    placementSpec = spring(stiffness = 300f, dampingRatio = 0.8f)
                 )
             )
         }

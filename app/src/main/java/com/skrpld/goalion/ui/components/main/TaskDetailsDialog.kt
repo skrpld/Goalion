@@ -15,22 +15,17 @@ fun TaskDetailsDialog(
     onDismiss: () -> Unit,
     onSaveDescription: (String) -> Unit
 ) {
-    // Используем локальное состояние, чтобы текст печатался плавно
     var localDescription by remember(task.id) { mutableStateOf(task.description) }
 
     Dialog(onDismissRequest = {
         onSaveDescription(localDescription)
         onDismiss()
     }) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            shape = MaterialTheme.shapes.large
+        GoalionCard(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            isSelected = false
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
+            Column(modifier = Modifier.padding(16.dp)) {
                 Text(
                     text = task.title.ifEmpty { "No Title" },
                     style = MaterialTheme.typography.headlineSmall
@@ -40,20 +35,18 @@ fun TaskDetailsDialog(
                     value = localDescription,
                     onValueChange = { localDescription = it },
                     label = { Text("Description") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 150.dp),
-                    textStyle = MaterialTheme.typography.bodyMedium
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 150.dp),
+                    shape = MaterialTheme.shapes.medium
                 )
-                Spacer(Modifier.height(8.dp))
-                TextButton(
+                Spacer(Modifier.height(16.dp))
+                GoalionCard(
                     onClick = {
                         onSaveDescription(localDescription)
                         onDismiss()
                     },
                     modifier = Modifier.align(Alignment.End)
                 ) {
-                    Text("Save & Close")
+                    Text("Save & Close", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                 }
             }
         }

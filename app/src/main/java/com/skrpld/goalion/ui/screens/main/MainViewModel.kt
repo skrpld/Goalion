@@ -7,7 +7,6 @@ import com.skrpld.goalion.data.database.TaskStatus
 import com.skrpld.goalion.data.models.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.Collections
@@ -59,7 +58,7 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
                     )
                     GoalListItem.GoalHeader(
                         goal = item.goal,
-                        tasks = sortedTasks, // Задачи теперь внутри хедера!
+                        tasks = sortedTasks,
                         isExpanded = expandedIds.contains(item.goal.id)
                     )
                 }
@@ -180,7 +179,6 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
         }
         _selectedActionItem.value = updated
         prioritySaveJob = viewModelScope.launch {
-            delay(500)
             when (val target = _selectedActionItem.value) {
                 is ActionTarget.GoalTarget -> dao.upsertGoal(target.goal)
                 is ActionTarget.TaskTarget -> dao.upsertTask(target.task)

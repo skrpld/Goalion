@@ -1,17 +1,14 @@
 package com.skrpld.goalion.ui.screens.main
 
-import androidx.compose.animation.*
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.skrpld.goalion.ui.components.main.ActionFabMenu
 import com.skrpld.goalion.ui.components.main.TaskDetailsDialog
 import org.koin.androidx.compose.koinViewModel
 
@@ -50,7 +47,7 @@ fun MainScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .clickable(
+                .combinedClickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = { viewModel.selectActionItem(null) }
@@ -84,9 +81,7 @@ fun MainScreen(
                                 }
                             }
                         },
-                        onEditDone = { viewModel.stopEditing() },
-                        onMoveGoal = viewModel::moveGoal,
-                        onMoveTask = viewModel::moveTask
+                        onEditDone = { viewModel.stopEditing() }
                     )
                 }
             }
@@ -98,44 +93,6 @@ fun MainScreen(
                 onDismiss = { viewModel.showTaskDetails(null) },
                 onSaveDescription = { viewModel.updateTaskDescription(task, it) }
             )
-        }
-    }
-}
-
-@Composable
-fun ActionFabMenu(
-    selectedTarget: MainViewModel.ActionTarget?,
-    onAddGoal: () -> Unit,
-    onDelete: () -> Unit,
-    onEdit: () -> Unit,
-    onPriority: () -> Unit
-) {
-    Column(
-        horizontalAlignment = Alignment.End,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        AnimatedVisibility(
-            visible = selectedTarget != null,
-            enter = expandVertically() + fadeIn(),
-            exit = shrinkVertically() + fadeOut()
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                horizontalAlignment = Alignment.End
-            ) {
-                SmallFloatingActionButton(onClick = onDelete, containerColor = MaterialTheme.colorScheme.errorContainer) {
-                    Icon(Icons.Default.Delete, contentDescription = null)
-                }
-                SmallFloatingActionButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, contentDescription = null)
-                }
-                SmallFloatingActionButton(onClick = onPriority) {
-                    Icon(Icons.Default.PriorityHigh, contentDescription = null)
-                }
-            }
-        }
-        FloatingActionButton(onClick = onAddGoal) {
-            Icon(Icons.Default.Add, contentDescription = null)
         }
     }
 }

@@ -1,4 +1,4 @@
-package com.skrpld.goalion.ui.screens.main
+package com.skrpld.goalion.ui.components.main
 
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.*
@@ -9,7 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.skrpld.goalion.data.models.Goal
 import com.skrpld.goalion.data.models.Task
-import com.skrpld.goalion.ui.components.main.GoalCard
+import com.skrpld.goalion.ui.screens.main.GoalListItem
+import com.skrpld.goalion.ui.screens.main.MainViewModel
 
 @Composable
 fun GoalsList(

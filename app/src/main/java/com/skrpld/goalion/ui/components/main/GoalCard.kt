@@ -8,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.unit.dp
 import com.skrpld.goalion.data.database.TaskStatus
@@ -39,6 +40,7 @@ fun GoalCard(
     modifier: Modifier = Modifier
 ) {
     val isGoalSelected = selectedTarget is MainViewModel.ActionTarget.GoalTarget && selectedTarget.goal.id == goal.id
+    val isDone = goal.status == TaskStatus.DONE
 
     val priorityColor = when(goal.priority) {
         0 -> HighPriorityColor
@@ -47,7 +49,9 @@ fun GoalCard(
     }
 
     GoalionCard(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .alpha(if (isDone) 0.5f else 1f),
         isSelected = isGoalSelected,
         onClick = onToggle,
         onLongClick = onLongClick,
@@ -57,20 +61,22 @@ fun GoalCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .drawBehind {
-                    drawRect(color = priorityColor, size = size.copy(width = 6.dp.toPx()))
+                    if (!isDone) {
+                        drawRect(color = priorityColor, size = size.copy(width = 6.dp.toPx()))
+                    }
                 }
                 .animateContentSize()
         ) {
             Row(
                 modifier = Modifier
                     .padding(16.dp)
-                    .padding(start = 8.dp),
+                    .padding(start = if (isDone) 0.dp else 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 EditableTitle(
                     title = goal.title,
                     isEditing = isEditing,
-                    isDone = goal.status == TaskStatus.DONE,
+                    isDone = isDone,
                     onTitleChange = onTitleChange,
                     onEditDone = onEditDone,
                     textStyle = MaterialTheme.typography.titleMedium,

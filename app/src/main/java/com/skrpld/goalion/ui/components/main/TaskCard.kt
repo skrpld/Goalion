@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.unit.dp
 import com.skrpld.goalion.data.database.TaskStatus
@@ -23,6 +24,7 @@ fun TaskCard(
     onLongClick: () -> Unit,
     onDoubleClick: () -> Unit
 ) {
+    val isDone = task.status == TaskStatus.DONE
     val priorityColor = when(task.priority) {
         0 -> HighPriorityColor
         1 -> NormalPriorityColor
@@ -30,6 +32,7 @@ fun TaskCard(
     }
 
     GoalionCard(
+        modifier = Modifier.alpha(if (isDone) 0.5f else 1f),
         isSelected = isSelected,
         onClick = onClick,
         onLongClick = onLongClick,
@@ -39,15 +42,17 @@ fun TaskCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .drawBehind {
-                    drawRect(color = priorityColor, size = size.copy(width = 4.dp.toPx()))
+                    if (!isDone) {
+                        drawRect(color = priorityColor, size = size.copy(width = 6.dp.toPx()))
+                    }
                 }
                 .padding(12.dp)
-                .padding(start = 4.dp)
+                .padding(start = if (isDone) 0.dp else 4.dp)
         ) {
             EditableTitle(
                 title = task.title,
                 isEditing = isEditing,
-                isDone = task.status == TaskStatus.DONE,
+                isDone = isDone,
                 onTitleChange = onTitleChange,
                 onEditDone = onEditDone,
                 textStyle = MaterialTheme.typography.bodyMedium,

@@ -26,5 +26,6 @@ data class Task(
     val status: TaskStatus = TaskStatus.TODO,
     val priority: Int = 1,
     val orderIndex: Int = 0,
-    val goalId: Int
+    val goalId: Int,
+    val updatedAt: Long = System.currentTimeMillis()
 )

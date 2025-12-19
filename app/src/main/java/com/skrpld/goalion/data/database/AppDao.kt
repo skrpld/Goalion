@@ -24,7 +24,7 @@ interface AppDao {
     @Query("""
         SELECT * FROM goals 
         WHERE profileId = :profileId 
-        ORDER BY status ASC, priority ASC, orderIndex ASC
+        ORDER BY status ASC, priority ASC, updatedAt DESC
     """)
     fun getGoalsWithTasksList(profileId: Int): Flow<List<GoalWithTasks>>
 
@@ -35,15 +35,9 @@ interface AppDao {
     @Delete
     suspend fun deleteTask(task: Task)
 
-    @Query("UPDATE goals SET status = :status WHERE id = :goalId")
-    suspend fun updateGoalStatus(goalId: Int, status: TaskStatus)
+    @Query("UPDATE goals SET status = :status, updatedAt = :timestamp WHERE id = :goalId")
+    suspend fun updateGoalStatus(goalId: Int, status: TaskStatus, timestamp: Long = System.currentTimeMillis())
 
-    @Query("UPDATE goals SET priority = :priority WHERE id = :goalId")
-    suspend fun updateGoalPriority(goalId: Int, priority: Int)
-
-    @Query("UPDATE tasks SET status = :status WHERE id = :taskId")
-    suspend fun updateTaskStatus(taskId: Int, status: TaskStatus)
-
-    @Query("UPDATE tasks SET priority = :priority WHERE id = :taskId")
-    suspend fun updateTaskPriority(taskId: Int, priority: Int)
+    @Query("UPDATE tasks SET status = :status, updatedAt = :timestamp WHERE id = :taskId")
+    suspend fun updateTaskStatus(taskId: Int, status: TaskStatus, timestamp: Long = System.currentTimeMillis())
 }

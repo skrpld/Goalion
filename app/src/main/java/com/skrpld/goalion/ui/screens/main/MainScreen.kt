@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.skrpld.goalion.ui.components.main.ActionFabMenu
+import com.skrpld.goalion.ui.components.main.GoalsList
 import com.skrpld.goalion.ui.components.main.TaskDetailsDialog
 import org.koin.androidx.compose.koinViewModel
 
@@ -72,11 +73,11 @@ fun MainScreen(
                         onAddTask = { goalId -> viewModel.addTask(goalId) },
                         onTitleChange = { id, title, isGoal ->
                             if (isGoal) {
-                                state.items.find { it.goal.id == id }?.let {
+                                state.items.firstOrNull { it.goal.id == id }?.let {
                                     viewModel.updateGoalTitle(it.goal, title)
                                 }
                             } else {
-                                state.items.flatMap { it.tasks }.find { it.id == id }?.let {
+                                state.items.flatMap { it.tasks }.firstOrNull { it.id == id }?.let {
                                     viewModel.updateTaskTitle(it, title)
                                 }
                             }

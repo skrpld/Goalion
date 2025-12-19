@@ -9,7 +9,15 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.util.Collections
+
+sealed class GoalListItem {
+    data class GoalHeader(
+        val goal: Goal,
+        val tasks: List<Task> = emptyList(),
+        val isExpanded: Boolean = false
+    ) : GoalListItem()
+    data class TaskItem(val task: Task) : GoalListItem()
+}
 
 class MainViewModel(private val dao: AppDao) : ViewModel() {
 
@@ -47,14 +55,14 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
                 val sortedGoals = goalsWithTasks.sortedWith(
                     compareBy<GoalWithTasks> { it.goal.status == TaskStatus.DONE }
                         .thenBy { it.goal.priority }
-                        .thenBy { it.goal.orderIndex }
+                        .thenByDescending { it.goal.updatedAt }
                 )
 
                 val items = sortedGoals.map { item ->
                     val sortedTasks = item.tasks.sortedWith(
                         compareBy<Task> { it.status == TaskStatus.DONE }
                             .thenBy { it.priority }
-                            .thenBy { it.orderIndex }
+                            .thenByDescending { it.updatedAt }
                     )
                     GoalListItem.GoalHeader(
                         goal = item.goal,
@@ -77,54 +85,18 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
         data class Empty(val profileId: Int) : MainUiState()
     }
 
-    fun moveGoal(fromIndex: Int, toIndex: Int) {
-        val state = uiState.value as? MainUiState.Success ?: return
-        val list = state.rawData.toMutableList()
-        if (fromIndex !in list.indices || toIndex !in list.indices) return
-
-        Collections.swap(list, fromIndex, toIndex)
-        viewModelScope.launch {
-            list.forEachIndexed { index, item ->
-                if (item.goal.orderIndex != index) {
-                    dao.upsertGoal(item.goal.copy(orderIndex = index))
-                }
-            }
-        }
-    }
-
-    fun moveTask(goalId: Int, fromIndex: Int, toIndex: Int) {
-        val state = uiState.value as? MainUiState.Success ?: return
-        val goalData = state.rawData.find { it.goal.id == goalId } ?: return
-        val tasks = goalData.tasks.toMutableList()
-
-        if (fromIndex !in tasks.indices || toIndex !in tasks.indices) return
-        Collections.swap(tasks, fromIndex, toIndex)
-
-        viewModelScope.launch {
-            tasks.forEachIndexed { index, task ->
-                if (task.orderIndex != index) {
-                    dao.upsertTask(task.copy(orderIndex = index))
-                }
-            }
-        }
-    }
+    private fun now() = System.currentTimeMillis()
 
     fun addGoal(profileId: Int) {
         viewModelScope.launch {
-            val state = uiState.value as? MainUiState.Success
-            val maxOrder = state?.rawData?.maxOfOrNull { it.goal.orderIndex } ?: -1
-            val id = dao.upsertGoal(Goal(title = "", profileId = profileId, orderIndex = maxOrder + 1)).toInt()
+            val id = dao.upsertGoal(Goal(title = "", profileId = profileId, updatedAt = now())).toInt()
             startEditing(id, isGoal = true)
         }
     }
 
     fun addTask(goalId: Int) {
         viewModelScope.launch {
-            val state = uiState.value as? MainUiState.Success
-            val goalData = state?.rawData?.find { it.goal.id == goalId }
-            val maxOrder = goalData?.tasks?.maxOfOrNull { it.orderIndex } ?: -1
-
-            val id = dao.upsertTask(Task(title = "", goalId = goalId, description = "", orderIndex = maxOrder + 1)).toInt()
+            val id = dao.upsertTask(Task(title = "", goalId = goalId, description = "", updatedAt = now())).toInt()
             _expandedGoalIds.update { it + goalId }
             startEditing(id, isGoal = false)
         }
@@ -152,21 +124,27 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
     }
 
     fun updateGoalTitle(goal: Goal, title: String) = viewModelScope.launch {
-        dao.upsertGoal(goal.copy(title = title))
+        dao.upsertGoal(goal.copy(title = title, updatedAt = now()))
     }
 
     fun updateTaskTitle(task: Task, title: String) = viewModelScope.launch {
-        dao.upsertTask(task.copy(title = title))
+        dao.upsertTask(task.copy(title = title, updatedAt = now()))
     }
 
     fun updateTaskDescription(task: Task, desc: String) = viewModelScope.launch {
-        dao.upsertTask(task.copy(description = desc))
+        dao.upsertTask(task.copy(description = desc, updatedAt = now()))
     }
 
     fun toggleStatus(target: ActionTarget) = viewModelScope.launch {
         when (target) {
-            is ActionTarget.GoalTarget -> dao.upsertGoal(target.goal.copy(status = if (target.goal.status == TaskStatus.TODO) TaskStatus.DONE else TaskStatus.TODO))
-            is ActionTarget.TaskTarget -> dao.upsertTask(target.task.copy(status = if (target.task.status == TaskStatus.TODO) TaskStatus.DONE else TaskStatus.TODO))
+            is ActionTarget.GoalTarget -> dao.upsertGoal(target.goal.copy(
+                status = if (target.goal.status == TaskStatus.TODO) TaskStatus.DONE else TaskStatus.TODO,
+                updatedAt = now()
+            ))
+            is ActionTarget.TaskTarget -> dao.upsertTask(target.task.copy(
+                status = if (target.task.status == TaskStatus.TODO) TaskStatus.DONE else TaskStatus.TODO,
+                updatedAt = now()
+            ))
         }
     }
 
@@ -174,8 +152,8 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
         val current = _selectedActionItem.value ?: return
         prioritySaveJob?.cancel()
         val updated = when (current) {
-            is ActionTarget.GoalTarget -> current.copy(goal = current.goal.copy(priority = (current.goal.priority + 1) % 3))
-            is ActionTarget.TaskTarget -> current.copy(task = current.task.copy(priority = (current.task.priority + 1) % 3))
+            is ActionTarget.GoalTarget -> current.copy(goal = current.goal.copy(priority = (current.goal.priority + 1) % 3, updatedAt = now()))
+            is ActionTarget.TaskTarget -> current.copy(task = current.task.copy(priority = (current.task.priority + 1) % 3, updatedAt = now()))
         }
         _selectedActionItem.value = updated
         prioritySaveJob = viewModelScope.launch {
@@ -201,13 +179,4 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
         data class TaskTarget(val task: Task) : ActionTarget()
         val id: Int get() = when(this) { is GoalTarget -> goal.id; is TaskTarget -> task.id }
     }
-}
-
-sealed class GoalListItem {
-    data class GoalHeader(
-        val goal: Goal,
-        val tasks: List<Task> = emptyList(),
-        val isExpanded: Boolean = false
-    ) : GoalListItem()
-    data class TaskItem(val task: Task) : GoalListItem()
 }

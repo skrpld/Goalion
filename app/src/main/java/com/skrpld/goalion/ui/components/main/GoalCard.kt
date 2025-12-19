@@ -51,12 +51,18 @@ fun GoalCard(
         else -> MaterialTheme.colorScheme.primary
     }
 
-    val syncSpring = remember { spring<IntSize>(dampingRatio = 0.8f, stiffness = 300f) }
+    val damping = 0.8f
+    val stiffness = 30f
 
     ElevatedCard(
         modifier = modifier
             .fillMaxWidth()
-            .animateContentSize(animationSpec = syncSpring) // Двигает соседей
+            .animateContentSize(
+                animationSpec = spring(
+                    dampingRatio = damping,
+                    stiffness = stiffness
+                )
+            )
             .border(
                 width = if (isGoalSelected) 2.dp else 0.dp,
                 color = if (isGoalSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
@@ -101,8 +107,16 @@ fun GoalCard(
 
             AnimatedVisibility(
                 visible = isExpanded,
-                enter = expandVertically(animationSpec = syncSpring) + fadeIn(),
-                exit = shrinkVertically(animationSpec = syncSpring) + fadeOut()
+                enter = expandVertically(
+                    animationSpec = spring(dampingRatio = damping, stiffness = stiffness)
+                ) + fadeIn(
+                    animationSpec = spring(dampingRatio = damping, stiffness = stiffness)
+                ),
+                exit = shrinkVertically(
+                    animationSpec = spring(dampingRatio = damping, stiffness = stiffness)
+                ) + fadeOut(
+                    animationSpec = spring(dampingRatio = damping, stiffness = stiffness)
+                )
             ) {
                 Column(
                     modifier = Modifier

@@ -33,8 +33,6 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
     val selectedTaskForDetails = _selectedTaskForDetails.asStateFlow()
 
     private val _expandedGoalIds = MutableStateFlow<Set<Int>>(emptySet())
-
-    // Храним ID закрепленных целей (в реальном приложении лучше сохранять в Prefs/DB)
     private val _pinnedGoalIds = MutableStateFlow<Set<Int>>(emptySet())
     val pinnedGoalIds = _pinnedGoalIds.asStateFlow()
 

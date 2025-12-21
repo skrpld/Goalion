@@ -21,7 +21,7 @@ import com.skrpld.goalion.data.database.TaskStatus
 data class Goal(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val title: String,
+    val title: String = "New Goal",
     val status: TaskStatus = TaskStatus.TODO,
     val priority: Int = 1,
     val orderIndex: Int = 0,

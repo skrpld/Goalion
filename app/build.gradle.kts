@@ -61,20 +61,20 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-
     implementation(libs.androidx.compose.material.icons.extended)
-
     implementation(libs.androidx.lifecycle.viewmodel.compose)
-
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
-
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
-
     implementation(libs.androidx.compose.foundation)
     implementation(platform(libs.androidx.compose.bom))
-
     implementation(libs.accompanist.permissions)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
+    testImplementation(libs.androidx.core.testing)
 }

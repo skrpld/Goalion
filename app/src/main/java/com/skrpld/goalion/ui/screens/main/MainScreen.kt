@@ -32,7 +32,6 @@ fun MainScreen(
 
     val currentContext = LocalContext.current
 
-    // Состояние разрешения (только для Android 13+)
     val notificationPermissionState = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         rememberPermissionState(Manifest.permission.POST_NOTIFICATIONS)
     } else {
@@ -60,7 +59,6 @@ fun MainScreen(
                 },
                 onPriority = { viewModel.cyclePriority() },
                 onPin = {
-                    // Логика проверки разрешения перед пином
                     if (notificationPermissionState != null && !notificationPermissionState.status.isGranted) {
                         notificationPermissionState.launchPermissionRequest()
                     } else {

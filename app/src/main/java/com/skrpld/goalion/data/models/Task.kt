@@ -5,6 +5,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.skrpld.goalion.data.database.TaskStatus
+import java.util.UUID
 
 @Entity(
     tableName = "tasks",
@@ -19,13 +20,17 @@ import com.skrpld.goalion.data.database.TaskStatus
     indices = [Index("goalId")]
 )
 data class Task(
-    @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
+    @PrimaryKey
+    val id: String = UUID.randomUUID().toString(),
+
     val title: String = "New Task",
     val description: String = "",
-    val status: TaskStatus = TaskStatus.TODO,
+    val status: Boolean = false,
     val priority: Int = 1,
-    val orderIndex: Int = 0,
-    val goalId: Int,
-    val updatedAt: Long = System.currentTimeMillis()
+    val order: Int = 0,
+
+    val goalId: String,
+    val updatedAt: Long = System.currentTimeMillis(),
+    val isSynced: Boolean = false,
+    val isDeleted: Boolean = false
 )

@@ -7,8 +7,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.skrpld.goalion.data.models.Goal
-import com.skrpld.goalion.data.models.Task
 import com.skrpld.goalion.ui.screens.main.GoalListItem
 import com.skrpld.goalion.ui.screens.main.MainViewModel
 

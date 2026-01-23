@@ -2,7 +2,7 @@ package com.skrpld.goalion
 
 import android.app.Application
 import androidx.room.Room
-import com.skrpld.goalion.data.database.AppDatabase
+import com.skrpld.goalion.data.local.AppDatabase
 import com.skrpld.goalion.ui.screens.main.MainViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.GlobalContext.startKoin

@@ -3,7 +3,7 @@ package com.skrpld.goalion.ui.screens.main
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.skrpld.goalion.data.database.AppDao
+import com.skrpld.goalion.data.local.AppDao
 import com.skrpld.goalion.data.database.TaskStatus
 import com.skrpld.goalion.data.models.*
 import com.skrpld.goalion.util.NotificationHelper
@@ -121,7 +121,14 @@ class MainViewModel(private val dao: AppDao) : ViewModel() {
 
     fun addTask(goalId: Int) {
         viewModelScope.launch {
-            val id = dao.upsertTask(Task(title = "", goalId = goalId, description = "", updatedAt = now())).toInt()
+            val id = dao.upsertTask(
+                Task(
+                    title = "",
+                    goalId = goalId,
+                    description = "",
+                    updatedAt = now()
+                )
+            ).toInt()
             _expandedGoalIds.update { it + goalId }
             startEditing(id, isGoal = false)
         }

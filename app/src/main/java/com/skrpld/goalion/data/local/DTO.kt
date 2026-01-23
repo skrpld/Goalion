@@ -1,4 +1,4 @@
-package com.skrpld.goalion.data.models
+package com.skrpld.goalion.data.local
 
 import androidx.room.Embedded
 import androidx.room.Relation

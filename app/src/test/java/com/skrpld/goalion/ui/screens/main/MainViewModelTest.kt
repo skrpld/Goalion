@@ -3,7 +3,7 @@ package com.skrpld.goalion.ui.screens.main
 import android.app.NotificationManager
 import android.content.Context
 import app.cash.turbine.test
-import com.skrpld.goalion.data.database.AppDao
+import com.skrpld.goalion.data.local.AppDao
 import com.skrpld.goalion.data.database.TaskStatus
 import com.skrpld.goalion.data.models.*
 import com.skrpld.goalion.util.NotificationHelper
@@ -105,11 +105,36 @@ class MainViewModelTest {
 
     @Test
     fun `5 uiState_sorting_goalsOrder`() = runTest {
-        val g1 = Goal(id = 1, title = "A", profileId = 1, status = TaskStatus.DONE, priority = 0, updatedAt = 100)
-        val g2 = Goal(id = 2, title = "B", profileId = 1, status = TaskStatus.TODO, priority = 1, updatedAt = 200)
-        val g3 = Goal(id = 3, title = "C", profileId = 1, status = TaskStatus.TODO, priority = 0, updatedAt = 300)
+        val g1 = Goal(
+            id = 1,
+            title = "A",
+            profileId = 1,
+            status = TaskStatus.DONE,
+            priority = 0,
+            updatedAt = 100
+        )
+        val g2 = Goal(
+            id = 2,
+            title = "B",
+            profileId = 1,
+            status = TaskStatus.TODO,
+            priority = 1,
+            updatedAt = 200
+        )
+        val g3 = Goal(
+            id = 3,
+            title = "C",
+            profileId = 1,
+            status = TaskStatus.TODO,
+            priority = 0,
+            updatedAt = 300
+        )
 
-        val data = listOf(GoalWithTasks(g1, emptyList()), GoalWithTasks(g2, emptyList()), GoalWithTasks(g3, emptyList()))
+        val data = listOf(
+            GoalWithTasks(g1, emptyList()),
+            GoalWithTasks(g2, emptyList()),
+            GoalWithTasks(g3, emptyList())
+        )
         coEvery { dao.getGoalsWithTasksList(any()) } returns flowOf(data)
         createViewModel()
 
@@ -129,7 +154,12 @@ class MainViewModelTest {
         val t2 = Task(id = 11, title = "T2", goalId = 1, status = TaskStatus.TODO, updatedAt = 500)
         val t3 = Task(id = 12, title = "T3", goalId = 1, status = TaskStatus.TODO, updatedAt = 1000)
 
-        coEvery { dao.getGoalsWithTasksList(any()) } returns flowOf(listOf(GoalWithTasks(goal, listOf(t1, t2, t3))))
+        coEvery { dao.getGoalsWithTasksList(any()) } returns flowOf(listOf(
+            GoalWithTasks(
+                goal,
+                listOf(t1, t2, t3)
+            )
+        ))
         createViewModel()
 
         viewModel.uiState.test {
@@ -145,7 +175,12 @@ class MainViewModelTest {
     @Test
     fun `7 uiState_expansion_reflectsCorrectState`() = runTest {
         val goal = Goal(id = 1, title = "G", profileId = 1)
-        coEvery { dao.getGoalsWithTasksList(any()) } returns flowOf(listOf(GoalWithTasks(goal, emptyList())))
+        coEvery { dao.getGoalsWithTasksList(any()) } returns flowOf(listOf(
+            GoalWithTasks(
+                goal,
+                emptyList()
+            )
+        ))
         createViewModel()
 
         viewModel.toggleGoalExpanded(1)
@@ -204,7 +239,12 @@ class MainViewModelTest {
     @Test
     fun `13 togglePinGoal_addsPin_andShowsNotification`() = runTest {
         val goal = Goal(id = 1, title = "P", profileId = 1)
-        coEvery { dao.getGoalsWithTasksList(any()) } returns flowOf(listOf(GoalWithTasks(goal, emptyList())))
+        coEvery { dao.getGoalsWithTasksList(any()) } returns flowOf(listOf(
+            GoalWithTasks(
+                goal,
+                emptyList()
+            )
+        ))
         createViewModel()
         val job = launch { viewModel.uiState.collect {} }
         advanceUntilIdle()
@@ -219,7 +259,12 @@ class MainViewModelTest {
     @Test
     fun `14 togglePinGoal_removesPin_andDismissesNotification`() = runTest {
         val goal = Goal(id = 1, title = "P", profileId = 1)
-        coEvery { dao.getGoalsWithTasksList(any()) } returns flowOf(listOf(GoalWithTasks(goal, emptyList())))
+        coEvery { dao.getGoalsWithTasksList(any()) } returns flowOf(listOf(
+            GoalWithTasks(
+                goal,
+                emptyList()
+            )
+        ))
         createViewModel()
         val job = launch { viewModel.uiState.collect {} }
         advanceUntilIdle()
@@ -237,7 +282,13 @@ class MainViewModelTest {
     @Test
     fun `15 togglePinGoal_doesNothing_whenTargetIsNotGoal`() {
         createViewModel()
-        viewModel.selectActionItem(MainViewModel.ActionTarget.TaskTarget(Task(id = 1, title = "", goalId = 1)))
+        viewModel.selectActionItem(MainViewModel.ActionTarget.TaskTarget(
+            Task(
+                id = 1,
+                title = "",
+                goalId = 1
+            )
+        ))
         viewModel.togglePinGoal(context)
         assertTrue(viewModel.pinnedGoalIds.value.isEmpty())
     }
@@ -302,7 +353,12 @@ class MainViewModelTest {
     @Test
     fun `23 toggleStatus_goal_switchesTodoToDone`() = runTest {
         createViewModel()
-        viewModel.toggleStatus(MainViewModel.ActionTarget.GoalTarget(Goal(profileId = 1, status = TaskStatus.TODO)))
+        viewModel.toggleStatus(MainViewModel.ActionTarget.GoalTarget(
+            Goal(
+                profileId = 1,
+                status = TaskStatus.TODO
+            )
+        ))
         advanceUntilIdle()
         coVerify { dao.upsertGoal(match { it.status == TaskStatus.DONE }) }
     }
@@ -310,7 +366,12 @@ class MainViewModelTest {
     @Test
     fun `24 toggleStatus_goal_switchesDoneToTodo`() = runTest {
         createViewModel()
-        viewModel.toggleStatus(MainViewModel.ActionTarget.GoalTarget(Goal(profileId = 1, status = TaskStatus.DONE)))
+        viewModel.toggleStatus(MainViewModel.ActionTarget.GoalTarget(
+            Goal(
+                profileId = 1,
+                status = TaskStatus.DONE
+            )
+        ))
         advanceUntilIdle()
         coVerify { dao.upsertGoal(match { it.status == TaskStatus.TODO }) }
     }
@@ -318,7 +379,12 @@ class MainViewModelTest {
     @Test
     fun `25 toggleStatus_task_switchesStatus`() = runTest {
         createViewModel()
-        viewModel.toggleStatus(MainViewModel.ActionTarget.TaskTarget(Task(goalId = 1, status = TaskStatus.TODO)))
+        viewModel.toggleStatus(MainViewModel.ActionTarget.TaskTarget(
+            Task(
+                goalId = 1,
+                status = TaskStatus.TODO
+            )
+        ))
         advanceUntilIdle()
         coVerify { dao.upsertTask(match { it.status == TaskStatus.DONE }) }
     }
@@ -328,7 +394,12 @@ class MainViewModelTest {
     @Test
     fun `26 cyclePriority_incrementsPriority_0to1`() {
         createViewModel()
-        viewModel.selectActionItem(MainViewModel.ActionTarget.GoalTarget(Goal(profileId = 1, priority = 0)))
+        viewModel.selectActionItem(MainViewModel.ActionTarget.GoalTarget(
+            Goal(
+                profileId = 1,
+                priority = 0
+            )
+        ))
         viewModel.cyclePriority()
         assertEquals(1, (viewModel.selectedActionItem.value as MainViewModel.ActionTarget.GoalTarget).goal.priority)
     }
@@ -336,7 +407,12 @@ class MainViewModelTest {
     @Test
     fun `27 cyclePriority_incrementsPriority_1to2`() {
         createViewModel()
-        viewModel.selectActionItem(MainViewModel.ActionTarget.GoalTarget(Goal(profileId = 1, priority = 1)))
+        viewModel.selectActionItem(MainViewModel.ActionTarget.GoalTarget(
+            Goal(
+                profileId = 1,
+                priority = 1
+            )
+        ))
         viewModel.cyclePriority()
         assertEquals(2, (viewModel.selectedActionItem.value as MainViewModel.ActionTarget.GoalTarget).goal.priority)
     }
@@ -344,7 +420,12 @@ class MainViewModelTest {
     @Test
     fun `28 cyclePriority_resetsPriority_2to0`() {
         createViewModel()
-        viewModel.selectActionItem(MainViewModel.ActionTarget.GoalTarget(Goal(profileId = 1, priority = 2)))
+        viewModel.selectActionItem(MainViewModel.ActionTarget.GoalTarget(
+            Goal(
+                profileId = 1,
+                priority = 2
+            )
+        ))
         viewModel.cyclePriority()
         assertEquals(0, (viewModel.selectedActionItem.value as MainViewModel.ActionTarget.GoalTarget).goal.priority)
     }
@@ -362,7 +443,12 @@ class MainViewModelTest {
     @Test
     fun `30 cyclePriority_updatesSelectedActionItem_immediately`() {
         createViewModel()
-        viewModel.selectActionItem(MainViewModel.ActionTarget.GoalTarget(Goal(profileId = 1, priority = 0)))
+        viewModel.selectActionItem(MainViewModel.ActionTarget.GoalTarget(
+            Goal(
+                profileId = 1,
+                priority = 0
+            )
+        ))
         viewModel.cyclePriority()
         assertEquals(1, (viewModel.selectedActionItem.value as MainViewModel.ActionTarget.GoalTarget).goal.priority)
     }
@@ -372,7 +458,12 @@ class MainViewModelTest {
     @Test
     fun `31 deleteCurrentTarget_goal_callsDaoDelete_andRemovesPin`() = runTest {
         val goal = Goal(id = 99, title = "G", profileId = 1)
-        coEvery { dao.getGoalsWithTasksList(any()) } returns flowOf(listOf(GoalWithTasks(goal, emptyList())))
+        coEvery { dao.getGoalsWithTasksList(any()) } returns flowOf(listOf(
+            GoalWithTasks(
+                goal,
+                emptyList()
+            )
+        ))
         createViewModel()
         val job = launch { viewModel.uiState.collect {} }
         advanceUntilIdle()
@@ -392,7 +483,13 @@ class MainViewModelTest {
     @Test
     fun `32 deleteCurrentTarget_task_callsDaoDelete`() = runTest {
         createViewModel()
-        viewModel.selectActionItem(MainViewModel.ActionTarget.TaskTarget(Task(id = 50, title = "T", goalId = 1)))
+        viewModel.selectActionItem(MainViewModel.ActionTarget.TaskTarget(
+            Task(
+                id = 50,
+                title = "T",
+                goalId = 1
+            )
+        ))
         viewModel.deleteCurrentTarget()
         advanceUntilIdle()
         coVerify { dao.deleteTask(any()) }

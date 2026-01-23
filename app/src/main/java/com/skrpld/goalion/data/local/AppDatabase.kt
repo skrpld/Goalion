@@ -5,11 +5,13 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
 @Database(
-    entities = [Profile::class, Goal::class, Task::class],
+    entities = [UserEntity::class, ProfileEntity::class, GoalEntity::class, TaskEntity::class],
     version = 1,
     exportSchema = false
 )
-@TypeConverters(AppTypeConverters::class)
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun appDao(): AppDao
+    abstract fun userDao(): UserDao
+    abstract fun profileDao(): ProfileDao
+    abstract fun goalDao(): GoalDao
+    abstract fun taskDao(): TaskDao
 }

@@ -7,31 +7,31 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface UserDao {
     @Upsert
-    suspend fun upsertUser(user: User): Long
+    suspend fun upsertUser(user: UserEntity): Long
 
     @Delete
-    suspend fun deleteUser(user: User)
+    suspend fun deleteUser(user: UserEntity)
 }
 
 @Dao
 interface ProfileDao {
     @Upsert
-    suspend fun upsertProfile(profile: Profile): Long
+    suspend fun upsertProfile(profile: ProfileEntity): Long
 
     @Delete
-    suspend fun deleteProfile(profile: Profile)
+    suspend fun deleteProfile(profile: ProfileEntity)
 
     @Query("SELECT * FROM profiles LIMIT 1")
-    suspend fun getAnyProfile(): Profile?
+    suspend fun getAnyProfile(): ProfileEntity?
 }
 
 @Dao
 interface GoalDao {
     @Upsert
-    suspend fun upsertGoal(goal: Goal): Long
+    suspend fun upsertGoal(goal: GoalEntity): Long
 
     @Delete
-    suspend fun deleteGoal(goal: Goal)
+    suspend fun deleteGoal(goal: GoalEntity)
 
     @Query(
         """
@@ -86,10 +86,10 @@ interface GoalDao {
 @Dao
 interface TaskDao {
     @Upsert
-    suspend fun upsertTask(task: Task): Long
+    suspend fun upsertTask(task: TaskEntity): Long
 
     @Delete
-    suspend fun deleteTask(task: Task)
+    suspend fun deleteTask(task: TaskEntity)
 
     @Query("""
         UPDATE goals

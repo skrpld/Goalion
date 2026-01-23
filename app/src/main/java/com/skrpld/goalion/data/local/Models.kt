@@ -1,11 +1,30 @@
 package com.skrpld.goalion.data.local
 
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import androidx.room.Relation
 import java.util.UUID
 
+/**
+ * === Data transfer object classes ===
+ */
+data class GoalWithTasks(
+    @Embedded
+    val goal: GoalEntity,
+
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "goalId"
+    )
+    val tasks: List<TaskEntity>
+)
+
+/**
+ * === Models classes ===
+ */
 @Entity(tableName = "users")
 data class UserEntity(
     @PrimaryKey
@@ -35,11 +54,11 @@ data class UserEntity(
 data class ProfileEntity(
     @PrimaryKey
     val id: String = UUID.randomUUID().toString(),
+    val userId: String,
 
     val title: String,
     val description: String,
 
-    val userId: String,
     val updatedAt: Long = System.currentTimeMillis(),
     val isSynced: Boolean = false,
     val isDeleted: Boolean = false
@@ -60,6 +79,7 @@ data class ProfileEntity(
 data class GoalEntity(
     @PrimaryKey
     val id: String = UUID.randomUUID().toString(),
+    val profileId: String,
 
     val title: String = "New Goal",
     val description: String = "",
@@ -67,7 +87,6 @@ data class GoalEntity(
     val priority: Int = 1,
     val order: Int = 0,
 
-    val profileId: String,
     val updatedAt: Long = System.currentTimeMillis(),
     val isSynced: Boolean = false,
     val isDeleted: Boolean = false
@@ -88,6 +107,7 @@ data class GoalEntity(
 data class TaskEntity(
     @PrimaryKey
     val id: String = UUID.randomUUID().toString(),
+    val goalId: String,
 
     val title: String = "New Task",
     val description: String = "",
@@ -95,7 +115,6 @@ data class TaskEntity(
     val priority: Int = 1,
     val order: Int = 0,
 
-    val goalId: String,
     val updatedAt: Long = System.currentTimeMillis(),
     val isSynced: Boolean = false,
     val isDeleted: Boolean = false

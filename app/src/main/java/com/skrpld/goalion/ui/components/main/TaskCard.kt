@@ -8,7 +8,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.unit.dp
 import com.skrpld.goalion.data.database.TaskStatus
-import com.skrpld.goalion.data.models.Task
 import com.skrpld.goalion.ui.theme.HighPriorityColor
 import com.skrpld.goalion.ui.theme.LowPriorityColor
 import com.skrpld.goalion.ui.theme.NormalPriorityColor

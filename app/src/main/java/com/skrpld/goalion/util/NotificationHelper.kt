@@ -6,7 +6,6 @@ import android.content.Context
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.skrpld.goalion.data.database.TaskStatus
-import com.skrpld.goalion.data.models.GoalWithTasks
 
 class NotificationHelper(private val context: Context) {
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -17,16 +16,14 @@ class NotificationHelper(private val context: Context) {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Pinned Goals",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "Notifications for pinned goals and tasks"
-            }
-            notificationManager.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "Pinned Goals",
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "Notifications for pinned goals and tasks"
         }
+        notificationManager.createNotificationChannel(channel)
     }
 
     fun showGoalNotification(goalWithTasks: GoalWithTasks) {

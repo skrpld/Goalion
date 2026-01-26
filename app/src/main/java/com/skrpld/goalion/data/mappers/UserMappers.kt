@@ -8,7 +8,6 @@ fun UserEntity.toDomain(): User = User(
     id = id,
     name = name,
     email = email,
-    password = password,
     updatedAt = updatedAt
 )
 
@@ -16,7 +15,6 @@ fun User.toEntity(isSynced: Boolean = false, isDeleted: Boolean = false): UserEn
     id = id,
     name = name,
     email = email,
-    password = password,
     updatedAt = updatedAt,
     isSynced = isSynced,
     isDeleted = isDeleted
@@ -34,7 +32,6 @@ fun NetworkUser.toEntity(currentPassword: String = ""): UserEntity = UserEntity(
     id = id,
     name = name,
     email = email,
-    password = currentPassword,
     updatedAt = updatedAt?.time ?: System.currentTimeMillis(),
     isSynced = true,
     isDeleted = isDeleted

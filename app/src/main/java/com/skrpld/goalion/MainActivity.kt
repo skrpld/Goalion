@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.skrpld.goalion.ui.screens.main.MainScreen
+import com.skrpld.goalion.ui.screens.home.MainScreen
 import com.skrpld.goalion.ui.theme.GoalionTheme
 
 class MainActivity : ComponentActivity() {

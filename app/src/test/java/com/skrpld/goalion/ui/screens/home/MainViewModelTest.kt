@@ -1,4 +1,4 @@
-package com.skrpld.goalion.ui.screens.main
+package com.skrpld.goalion.ui.screens.home
 
 import android.app.NotificationManager
 import android.content.Context

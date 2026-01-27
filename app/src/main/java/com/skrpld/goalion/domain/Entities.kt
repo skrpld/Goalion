@@ -2,16 +2,13 @@ package com.skrpld.goalion.domain
 
 import com.android.identity.util.UUID
 
-/**
- * === Data transfer object classes ===
- */
 data class GoalWithTasks(
     val goal: Goal,
     val tasks: List<Task>
 )
 
 /**
- * === Models classes ===
+ * === Entities ===
  */
 data class User(
     val id: String = UUID.randomUUID().toString(),

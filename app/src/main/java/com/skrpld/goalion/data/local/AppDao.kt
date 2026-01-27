@@ -6,22 +6,35 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface UserDao {
     @Upsert
-    suspend fun upsert(user: UserEntity): Long
+    suspend fun upsert(user: UserEntity)
 
-    @Delete
-    suspend fun delete(user: UserEntity)
+    @Query("DELETE FROM users WHERE id = :userId")
+    suspend fun delete(userId: String)
+
+    @Query("SELECT * FROM users WHERE id = :userId")
+    suspend fun getUser(userId: String): UserEntity?
+
 }
 
 @Dao
 interface ProfileDao {
     @Upsert
-    suspend fun upsert(profile: ProfileEntity): Long
+    suspend fun upsert(profile: ProfileEntity)
 
-    @Delete
-    suspend fun delete(profile: ProfileEntity)
+    @Upsert
+    suspend fun upsertAll(profiles: List<ProfileEntity>)
 
-    @Query("SELECT * FROM profiles LIMIT 1")
-    suspend fun getAny(): ProfileEntity?
+    @Query("UPDATE profiles SET isDeleted = 1, isSynced = 0, updatedAt = :timestamp WHERE id = :profileId")
+    suspend fun softDelete(profileId: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("DELETE FROM profiles WHERE id = :profileId")
+    suspend fun hardDelete(profileId: String)
+
+    @Query("SELECT * FROM profiles WHERE id = :id")
+    suspend fun getProfile(id: String): ProfileEntity?
+
+    @Query("SELECT * FROM profiles WHERE userId = :userId AND isDeleted = 0")
+    suspend fun getProfilesByUser(userId: String): List<ProfileEntity>
 
     @Query("SELECT * FROM profiles WHERE isSynced = 0")
     suspend fun getUnsynced(): List<ProfileEntity>
@@ -29,53 +42,32 @@ interface ProfileDao {
     @Query("UPDATE profiles SET isSynced = 1 WHERE id = :id")
     suspend fun markSynced(id: String)
 
-    @Query("SELECT MAX(updatedAt) FROM profiles")
-    suspend fun getLastUpdateTime(): Long?
+    @Query("SELECT MAX(updatedAt) FROM profiles WHERE userId = :userId")
+    suspend fun getLastUpdateTime(userId: String): Long?
 }
 
 @Dao
 interface GoalDao {
     @Upsert
-    suspend fun upsert(goal: GoalEntity): Long
+    suspend fun upsert(goal: GoalEntity)
 
-    @Delete
-    suspend fun delete(goal: GoalEntity)
+    @Upsert
+    suspend fun upsertAll(goals: List<GoalEntity>)
 
-    @Query("""
-        UPDATE goals
-        SET status = :status, updatedAt = :timestamp, isSynced = 0
-        WHERE id = :goalId
-    """
-    )
-    suspend fun updateStatus(
-        goalId: String,
-        status: Boolean,
-        timestamp: Long = System.currentTimeMillis()
-    )
+    @Query("UPDATE goals SET isDeleted = 1, isSynced = 0, updatedAt = :timestamp WHERE id = :goalId")
+    suspend fun softDelete(goalId: String, timestamp: Long = System.currentTimeMillis())
 
-    @Query("""
-        UPDATE goals
-        SET priority = :priority, updatedAt = :timestamp, isSynced = 0
-        WHERE id = :goalId
-    """
-    )
-    suspend fun updatePriority(
-        goalId: String,
-        priority: Int,
-        timestamp: Long = System.currentTimeMillis()
-    )
+    @Query("DELETE FROM goals WHERE id = :goalId")
+    suspend fun hardDelete(goalId: String)
 
-    @Query("""
-        UPDATE goals
-        SET 'order' = :order, updatedAt = :timestamp, isSynced = 0
-        WHERE id = :goalId
-    """
-    )
-    suspend fun updateOrder(
-        goalId: String,
-        order: Int,
-        timestamp: Long = System.currentTimeMillis()
-    )
+    @Query("UPDATE goals SET status = :status, updatedAt = :ts, isSynced = 0 WHERE id = :id")
+    suspend fun updateStatus(id: String, status: Boolean, ts: Long = System.currentTimeMillis())
+
+    @Query("UPDATE goals SET priority = :priority, updatedAt = :ts, isSynced = 0 WHERE id = :id")
+    suspend fun updatePriority(id: String, priority: Int, ts: Long = System.currentTimeMillis())
+
+    @Query("UPDATE goals SET `order` = :order, updatedAt = :ts, isSynced = 0 WHERE id = :id")
+    suspend fun updateOrder(id: String, order: Int, ts: Long = System.currentTimeMillis())
 
     @Query("SELECT * FROM goals WHERE isSynced = 0")
     suspend fun getUnsynced(): List<GoalEntity>
@@ -83,59 +75,45 @@ interface GoalDao {
     @Query("UPDATE goals SET isSynced = 1 WHERE id = :id")
     suspend fun markSynced(id: String)
 
-    @Query("SELECT MAX(updatedAt) FROM goals")
-    suspend fun getLastUpdateTime(): Long?
+    @Query("SELECT * FROM goals WHERE id = :id")
+    suspend fun getGoal(id: String): GoalEntity?
+
+    @Query("SELECT MAX(updatedAt) FROM goals WHERE profileId IN (:profileIds)")
+    suspend fun getLastUpdateTime(profileIds: List<String>): Long?
+
+    @Query("SELECT id FROM goals WHERE profileId IN (:profileIds) AND isDeleted = 0")
+    suspend fun getGoalIdsByProfileIds(profileIds: List<String>): List<String>
 
     @Transaction
-    @Query("""
-        SELECT * FROM goals 
-        WHERE profileId = :profileId 
-        ORDER BY status ASC, priority ASC, updatedAt DESC
-    """
-    )
+    @Query("SELECT * FROM goals WHERE profileId = :profileId ORDER BY `order` ASC")
     fun getGoalsWithTasksList(profileId: String): Flow<List<GoalWithTasks>>
 }
 
 @Dao
 interface TaskDao {
     @Upsert
-    suspend fun upsert(task: TaskEntity): Long
+    suspend fun upsert(task: TaskEntity)
 
-    @Delete
-    suspend fun delete(task: TaskEntity)
+    @Upsert
+    suspend fun upsertAll(tasks: List<TaskEntity>)
 
-    @Query("""
-        UPDATE goals
-        SET status = :status, updatedAt = :timestamp, isSynced = 0
-        WHERE id = :taskId
-    """)
-    suspend fun updateStatus(
-        taskId: String,
-        status: Boolean,
-        timestamp: Long = System.currentTimeMillis()
-    )
+    @Query("UPDATE tasks SET isDeleted = 1, isSynced = 0, updatedAt = :timestamp WHERE id = :taskId")
+    suspend fun softDelete(taskId: String, timestamp: Long = System.currentTimeMillis())
 
-    @Query("""
-        UPDATE tasks
-        SET priority = :priority, updatedAt = :timestamp, isSynced = 0
-        WHERE id = :taskId
-    """)
-    suspend fun updatePriority(
-        taskId: String,
-        priority: Int,
-        timestamp: Long = System.currentTimeMillis()
-    )
+    @Query("DELETE FROM tasks WHERE id = :taskId")
+    suspend fun hardDelete(taskId: String)
 
-    @Query("""
-        UPDATE tasks
-        SET 'order' = :order, updatedAt = :timestamp, isSynced = 0
-        WHERE id = :taskId
-    """)
-    suspend fun updateOrder(
-        taskId: String,
-        order: Int,
-        timestamp: Long = System.currentTimeMillis()
-    )
+    @Query("UPDATE tasks SET status = :status, updatedAt = :ts, isSynced = 0 WHERE id = :id")
+    suspend fun updateStatus(id: String, status: Boolean, ts: Long = System.currentTimeMillis())
+
+    @Query("UPDATE tasks SET priority = :priority, updatedAt = :ts, isSynced = 0 WHERE id = :id")
+    suspend fun updatePriority(id: String, priority: Int, ts: Long = System.currentTimeMillis())
+
+    @Query("UPDATE tasks SET `order` = :order, updatedAt = :ts, isSynced = 0 WHERE id = :id")
+    suspend fun updateOrder(id: String, order: Int, ts: Long = System.currentTimeMillis())
+
+    @Query("SELECT * FROM tasks WHERE id = :id")
+    suspend fun getTask(id: String): TaskEntity?
 
     @Query("SELECT * FROM tasks WHERE isSynced = 0")
     suspend fun getUnsynced(): List<TaskEntity>
@@ -143,6 +121,6 @@ interface TaskDao {
     @Query("UPDATE tasks SET isSynced = 1 WHERE id = :id")
     suspend fun markSynced(id: String)
 
-    @Query("SELECT MAX(updatedAt) FROM tasks")
-    suspend fun getLastUpdateTime(): Long?
+    @Query("SELECT MAX(updatedAt) FROM tasks WHERE goalId IN (:goalIds)")
+    suspend fun getLastUpdateTime(goalIds: List<String>): Long?
 }

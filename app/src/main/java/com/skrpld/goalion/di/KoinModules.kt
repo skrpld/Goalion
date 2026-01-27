@@ -8,14 +8,14 @@ import com.skrpld.goalion.data.remote.ProfileRemoteDataSource
 import com.skrpld.goalion.data.remote.TaskRemoteDataSource
 import com.skrpld.goalion.data.remote.UserRemoteDataSource
 import com.skrpld.goalion.data.workers.SyncWorker
-import com.skrpld.goalion.ui.screens.main.MainViewModel
+import com.skrpld.goalion.ui.screens.home.HomeViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.dsl.worker
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val viewModelModule = module {
-    viewModel { MainViewModel(get(), get(), get()) }
+    viewModel { HomeViewModel() }
 }
 
 val localModule = module {

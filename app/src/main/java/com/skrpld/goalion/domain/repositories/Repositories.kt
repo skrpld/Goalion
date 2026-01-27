@@ -28,8 +28,7 @@ interface ProfileRepository {
     suspend fun upsertProfile(profile: Profile)
     suspend fun deleteProfile(profileId: String)
 
-    suspend fun syncProfile(userId: String)
-    suspend fun fetchProfiles(userId: String)
+    suspend fun syncProfiles(userId: String)
 }
 
 interface GoalRepository {
@@ -43,7 +42,6 @@ interface GoalRepository {
     suspend fun updateGoalOrder(goalId: String, order: Int)
 
     suspend fun syncGoal(profileId: String)
-    suspend fun fetchGoals(userId: String)
 }
 
 interface TaskRepository {
@@ -55,5 +53,4 @@ interface TaskRepository {
     suspend fun updateTaskOrder(taskId: String, order: Int)
 
     suspend fun syncTask(goalId: String)
-    suspend fun fetchTasks(userId: String)
 }

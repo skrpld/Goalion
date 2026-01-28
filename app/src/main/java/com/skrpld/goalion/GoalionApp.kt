@@ -1,9 +1,9 @@
 package com.skrpld.goalion
 
 import android.app.Application
-import com.skrpld.goalion.di.localModule
-import com.skrpld.goalion.di.remoteModule
-import com.skrpld.goalion.di.viewModelModule
+import com.skrpld.goalion.di.dataModule
+import com.skrpld.goalion.di.domainModule
+import com.skrpld.goalion.di.presentationModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.koin.workManagerFactory
 import org.koin.core.context.GlobalContext.startKoin
@@ -15,9 +15,9 @@ class GoalionApp : Application() {
             androidContext(this@GoalionApp)
             workManagerFactory()
             modules(
-                viewModelModule,
-                localModule,
-                remoteModule
+                presentationModule,
+                domainModule,
+                dataModule,
             )
         }
     }

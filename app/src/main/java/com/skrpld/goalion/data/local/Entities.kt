@@ -8,9 +8,6 @@ import androidx.room.PrimaryKey
 import androidx.room.Relation
 import java.util.UUID
 
-/**
- * === Data transfer object classes ===
- */
 data class GoalWithTasks(
     @Embedded
     val goal: GoalEntity,
@@ -23,7 +20,7 @@ data class GoalWithTasks(
 )
 
 /**
- * === Models classes ===
+ * === Entities ===
  */
 @Entity(tableName = "users")
 data class UserEntity(

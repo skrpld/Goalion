@@ -6,9 +6,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 
-class AuthRemoteDataSource(
-    private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
-) {
+class AuthRemoteDataSource(private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()) {
     fun getCurrentUser(): FirebaseUser? {
         return firebaseAuth.currentUser
     }
@@ -31,9 +29,7 @@ class AuthRemoteDataSource(
         firebaseAuth.signOut()
     }
 }
-class UserRemoteDataSource constructor(
-    private val firestore: FirebaseFirestore
-) {
+class UserRemoteDataSource (private val firestore: FirebaseFirestore) {
     suspend fun upsertUser(user: NetworkUser) {
         firestore.collection("users")
             .document(user.id)
@@ -41,25 +37,38 @@ class UserRemoteDataSource constructor(
             .await()
     }
 
-    suspend fun getUser(userId: String): NetworkUser? {
-        return firestore.collection("users")
-            .document(userId)
-            .get()
-            .await()
-            .toObject(NetworkUser::class.java)
-    }
-
     suspend fun deleteUser(userId: String) {
         firestore.collection("users")
             .document(userId)
-            .delete()
+            .delete().await()
+    }
+
+    suspend fun getUser(userId: String): NetworkUser? {
+        return firestore.collection("users")
+            .document(userId)
+            .get().await().toObject(NetworkUser::class.java)
+    }
+
+    suspend fun isNameTaken(name: String): Boolean {
+        val snapshot = firestore.collection("users")
+            .whereEqualTo("name", name)
+            .limit(1)
+            .get()
             .await()
+        return !snapshot.isEmpty
+    }
+
+    suspend fun isEmailTaken(email: String): Boolean {
+        val snapshot = firestore.collection("users")
+            .whereEqualTo("email", email)
+            .limit(1)
+            .get()
+            .await()
+        return !snapshot.isEmpty
     }
 }
 
-class ProfileRemoteDataSource constructor(
-    private val firestore: FirebaseFirestore
-) {
+class ProfileRemoteDataSource (private val firestore: FirebaseFirestore) {
     suspend fun upsertProfile(profile: NetworkProfile) {
         firestore.collection("profiles")
             .document(profile.id)
@@ -67,20 +76,17 @@ class ProfileRemoteDataSource constructor(
             .await()
     }
 
-    suspend fun getProfilesByUser(userId: String): List<NetworkProfile> {
-        return firestore.collection("profiles")
-            .whereEqualTo("userId", userId)
-            .whereEqualTo("isDeleted", false)
-            .get()
-            .await()
-            .toObjects(NetworkProfile::class.java)
-    }
-
     suspend fun deleteProfile(profileId: String) {
         firestore.collection("profiles")
             .document(profileId)
-            .delete()
-            .await()
+            .delete().await()
+    }
+
+    suspend fun getProfilesUpdatedAfter(userId: String, lastUpdate: Long): List<NetworkProfile> {
+        return firestore.collection("profiles")
+            .whereEqualTo("userId", userId)
+            .whereGreaterThan("updatedAt", lastUpdate)
+            .get().await().toObjects(NetworkProfile::class.java)
     }
 }
 
@@ -94,28 +100,17 @@ class GoalRemoteDataSource constructor(
             .await()
     }
 
-    suspend fun getGoalsByProfile(profileId: String): List<NetworkGoal> {
-        return firestore.collection("goals")
-            .whereEqualTo("profileId", profileId)
-            .get()
-            .await()
-            .toObjects(NetworkGoal::class.java)
-    }
-
-    suspend fun getGoalsUpdatedAfter(profileId: String, lastSyncTimestamp: java.util.Date): List<NetworkGoal> {
-        return firestore.collection("goals")
-            .whereEqualTo("profileId", profileId)
-            .whereGreaterThan("updatedAt", lastSyncTimestamp)
-            .get()
-            .await()
-            .toObjects(NetworkGoal::class.java)
-    }
-
     suspend fun deleteGoal(goalId: String) {
         firestore.collection("goals")
             .document(goalId)
-            .delete()
-            .await()
+            .delete().await()
+    }
+
+    suspend fun getGoalsUpdatedAfter(profileId: String, lastUpdate: java.util.Date): List<NetworkGoal> {
+        return firestore.collection("goals")
+            .whereEqualTo("profileId", profileId)
+            .whereGreaterThan("updatedAt", lastUpdate)
+            .get().await().toObjects(NetworkGoal::class.java)
     }
 }
 
@@ -129,27 +124,16 @@ class TaskRemoteDataSource constructor(
             .await()
     }
 
-    suspend fun getTasksByGoal(goalId: String): List<NetworkTask> {
-        return firestore.collection("tasks")
-            .whereEqualTo("goalId", goalId)
-            .get()
-            .await()
-            .toObjects(NetworkTask::class.java)
-    }
-
-    suspend fun getTasksUpdatedAfter(goalId: String, lastSyncTimestamp: java.util.Date): List<NetworkTask> {
-        return firestore.collection("tasks")
-            .whereEqualTo("goalId", goalId)
-            .whereGreaterThan("updatedAt", lastSyncTimestamp)
-            .get()
-            .await()
-            .toObjects(NetworkTask::class.java)
-    }
-
     suspend fun deleteTask(taskId: String) {
         firestore.collection("tasks")
             .document(taskId)
-            .delete()
-            .await()
+            .delete().await()
+    }
+
+    suspend fun getTasksUpdatedAfter(goalId: String, lastUpdate: java.util.Date): List<NetworkTask> {
+        return firestore.collection("tasks")
+            .whereEqualTo("goalId", goalId)
+            .whereGreaterThan("updatedAt", lastUpdate)
+            .get().await().toObjects(NetworkTask::class.java)
     }
 }

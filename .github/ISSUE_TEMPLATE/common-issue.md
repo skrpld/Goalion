@@ -1,6 +1,6 @@
 ---
-name: Custom template
-about: Template for project managment
+name: Common issue
+about: Base issue template
 title: ''
 labels: ''
 assignees: skrpld

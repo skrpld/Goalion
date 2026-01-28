@@ -13,7 +13,6 @@ interface UserDao {
 
     @Query("SELECT * FROM users WHERE id = :userId")
     suspend fun getUser(userId: String): UserEntity?
-
 }
 
 @Dao

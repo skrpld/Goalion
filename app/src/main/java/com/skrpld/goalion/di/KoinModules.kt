@@ -18,6 +18,32 @@ import com.skrpld.goalion.domain.repositories.GoalRepository
 import com.skrpld.goalion.domain.repositories.ProfileRepository
 import com.skrpld.goalion.domain.repositories.TaskRepository
 import com.skrpld.goalion.domain.repositories.UserRepository
+import com.skrpld.goalion.domain.usecases.CreateGoalUseCase
+import com.skrpld.goalion.domain.usecases.CreateProfileUseCase
+import com.skrpld.goalion.domain.usecases.CreateTaskUseCase
+import com.skrpld.goalion.domain.usecases.DeleteGoalUseCase
+import com.skrpld.goalion.domain.usecases.DeleteProfileUseCase
+import com.skrpld.goalion.domain.usecases.DeleteTaskUseCase
+import com.skrpld.goalion.domain.usecases.DeleteUserUseCase
+import com.skrpld.goalion.domain.usecases.GetGoalsWithTasksUseCase
+import com.skrpld.goalion.domain.usecases.GetProfilesUseCases
+import com.skrpld.goalion.domain.usecases.GetUserUseCase
+import com.skrpld.goalion.domain.usecases.LogoutUseCase
+import com.skrpld.goalion.domain.usecases.SignInUseCase
+import com.skrpld.goalion.domain.usecases.SignUpUseCase
+import com.skrpld.goalion.domain.usecases.SyncGoalUseCase
+import com.skrpld.goalion.domain.usecases.SyncProfilesUseCase
+import com.skrpld.goalion.domain.usecases.SyncTaskUseCase
+import com.skrpld.goalion.domain.usecases.UpdateGoalOrderUseCase
+import com.skrpld.goalion.domain.usecases.UpdateGoalPriorityUseCase
+import com.skrpld.goalion.domain.usecases.UpdateGoalStatusUseCase
+import com.skrpld.goalion.domain.usecases.UpdateGoalUseCase
+import com.skrpld.goalion.domain.usecases.UpdateProfileUseCase
+import com.skrpld.goalion.domain.usecases.UpdateTaskOrderUseCase
+import com.skrpld.goalion.domain.usecases.UpdateTaskPriorityUseCase
+import com.skrpld.goalion.domain.usecases.UpdateTaskStatusUseCase
+import com.skrpld.goalion.domain.usecases.UpdateTaskUseCase
+import com.skrpld.goalion.domain.usecases.UpdateUserUseCase
 import com.skrpld.goalion.ui.screens.home.HomeViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.dsl.worker
@@ -26,6 +52,39 @@ import org.koin.dsl.module
 
 val presentationModule = module {
     viewModel { HomeViewModel() }
+}
+
+val domainModule = module {
+    factory { SignUpUseCase(get(), get()) }
+    factory { SignInUseCase(get()) }
+    factory { LogoutUseCase(get()) }
+
+    factory { GetUserUseCase(get(), get()) }
+    factory { UpdateUserUseCase(get()) }
+    factory { DeleteUserUseCase(get()) }
+
+    factory { GetProfilesUseCases(get()) }
+    factory { CreateProfileUseCase(get()) }
+    factory { UpdateProfileUseCase(get()) }
+    factory { DeleteProfileUseCase(get()) }
+    factory { SyncProfilesUseCase(get()) }
+
+    factory { GetGoalsWithTasksUseCase(get()) }
+    factory { CreateGoalUseCase(get()) }
+    factory { UpdateGoalUseCase(get()) }
+    factory { DeleteGoalUseCase(get()) }
+    factory { UpdateGoalStatusUseCase(get()) }
+    factory { UpdateGoalPriorityUseCase(get()) }
+    factory { UpdateGoalOrderUseCase(get()) }
+    factory { SyncGoalUseCase(get()) }
+
+    factory { CreateTaskUseCase(get()) }
+    factory { UpdateTaskUseCase(get()) }
+    factory { DeleteTaskUseCase(get()) }
+    factory { UpdateTaskStatusUseCase(get()) }
+    factory { UpdateTaskPriorityUseCase(get()) }
+    factory { UpdateTaskOrderUseCase(get()) }
+    factory { SyncTaskUseCase(get()) }
 }
 
 val dataModule = module {

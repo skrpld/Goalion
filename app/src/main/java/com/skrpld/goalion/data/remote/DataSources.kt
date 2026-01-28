@@ -48,6 +48,24 @@ class UserRemoteDataSource (private val firestore: FirebaseFirestore) {
             .document(userId)
             .get().await().toObject(NetworkUser::class.java)
     }
+
+    suspend fun isNameTaken(name: String): Boolean {
+        val snapshot = firestore.collection("users")
+            .whereEqualTo("name", name)
+            .limit(1)
+            .get()
+            .await()
+        return !snapshot.isEmpty
+    }
+
+    suspend fun isEmailTaken(email: String): Boolean {
+        val snapshot = firestore.collection("users")
+            .whereEqualTo("email", email)
+            .limit(1)
+            .get()
+            .await()
+        return !snapshot.isEmpty
+    }
 }
 
 class ProfileRemoteDataSource (private val firestore: FirebaseFirestore) {

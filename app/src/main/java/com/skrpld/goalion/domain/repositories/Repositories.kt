@@ -1,10 +1,10 @@
 package com.skrpld.goalion.domain.repositories
 
-import com.skrpld.goalion.domain.Goal
-import com.skrpld.goalion.domain.GoalWithTasks
-import com.skrpld.goalion.domain.Profile
-import com.skrpld.goalion.domain.Task
-import com.skrpld.goalion.domain.User
+import com.skrpld.goalion.domain.entities.Goal
+import com.skrpld.goalion.domain.entities.GoalWithTasks
+import com.skrpld.goalion.domain.entities.Profile
+import com.skrpld.goalion.domain.entities.Task
+import com.skrpld.goalion.domain.entities.User
 import kotlinx.coroutines.flow.Flow
 
 interface AuthRepository {
@@ -20,6 +20,9 @@ interface UserRepository {
 
     suspend fun upsertUser(user: User)
     suspend fun deleteUser(userId: String)
+
+    suspend fun isNameTaken(name: String): Boolean
+    suspend fun isEmailTaken(email: String): Boolean
 }
 
 interface ProfileRepository {

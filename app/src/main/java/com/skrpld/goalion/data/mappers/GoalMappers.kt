@@ -2,7 +2,7 @@ package com.skrpld.goalion.data.mappers
 
 import com.skrpld.goalion.data.local.*
 import com.skrpld.goalion.data.remote.*
-import com.skrpld.goalion.domain.*
+import com.skrpld.goalion.domain.entities.Goal
 
 // --- Entity-Domain ---
 

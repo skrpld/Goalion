@@ -1,6 +1,6 @@
 package com.skrpld.goalion.data.mappers
 
-import com.skrpld.goalion.domain.GoalWithTasks
+import com.skrpld.goalion.domain.entities.GoalWithTasks
 import com.skrpld.goalion.data.local.GoalWithTasks as LocalGoalWithTasks
 
 fun LocalGoalWithTasks.toDomain(): GoalWithTasks = GoalWithTasks(

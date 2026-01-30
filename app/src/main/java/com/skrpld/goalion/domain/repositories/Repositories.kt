@@ -13,6 +13,9 @@ interface AuthRepository {
     suspend fun signUp(name: String, email: String, pass: String): Result<User>
     suspend fun signIn(email: String, pass: String): Result<User>
     suspend fun logout()
+    suspend fun upsertUser(user: User)
+    suspend fun reLoginAndRetry(email: String, pass: String, userToSave: User)
+    suspend fun changePassword(currentPass: String, newPass: String): Result<Unit>
 }
 
 interface UserRepository {

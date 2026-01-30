@@ -18,6 +18,7 @@ import com.skrpld.goalion.domain.repositories.GoalRepository
 import com.skrpld.goalion.domain.repositories.ProfileRepository
 import com.skrpld.goalion.domain.repositories.TaskRepository
 import com.skrpld.goalion.domain.repositories.UserRepository
+import com.skrpld.goalion.domain.usecases.ChangePasswordUseCase
 import com.skrpld.goalion.domain.usecases.CreateGoalUseCase
 import com.skrpld.goalion.domain.usecases.CreateProfileUseCase
 import com.skrpld.goalion.domain.usecases.CreateTaskUseCase
@@ -29,6 +30,7 @@ import com.skrpld.goalion.domain.usecases.GetGoalsWithTasksUseCase
 import com.skrpld.goalion.domain.usecases.GetProfilesUseCases
 import com.skrpld.goalion.domain.usecases.GetUserUseCase
 import com.skrpld.goalion.domain.usecases.LogoutUseCase
+import com.skrpld.goalion.domain.usecases.ReauthenticateAndSaveUseCase
 import com.skrpld.goalion.domain.usecases.SignInUseCase
 import com.skrpld.goalion.domain.usecases.SignUpUseCase
 import com.skrpld.goalion.domain.usecases.SyncGoalUseCase
@@ -58,6 +60,8 @@ val domainModule = module {
     factory { SignUpUseCase(get(), get()) }
     factory { SignInUseCase(get()) }
     factory { LogoutUseCase(get()) }
+    factory { ReauthenticateAndSaveUseCase(get()) }
+    factory { ChangePasswordUseCase(get()) }
 
     factory { GetUserUseCase(get(), get()) }
     factory { UpdateUserUseCase(get()) }

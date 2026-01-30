@@ -17,6 +17,9 @@ fun HomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(text = "Main Screen")
+        Text(
+            text = "Main Screen",
+            style = MaterialTheme.typography.titleLarge
+        )
     }
 }

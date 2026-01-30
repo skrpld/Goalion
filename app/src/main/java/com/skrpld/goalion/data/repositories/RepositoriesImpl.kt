@@ -6,6 +6,9 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.skrpld.goalion.data.local.GoalDao
 import com.skrpld.goalion.data.local.ProfileDao
 import com.skrpld.goalion.data.local.TaskDao
@@ -80,6 +83,54 @@ class AuthRepositoryImpl(
         authRemote.logout()
     }
 
+    override suspend fun upsertUser(user: User) {
+        val currentUser = authRemote.getCurrentUser()
+            ?: throw IllegalStateException("User must be logged in")
+
+        val oldEmail = currentUser.email
+        val newEmail = user.email
+        val isEmailChanged = oldEmail != newEmail && newEmail.isNotBlank()
+
+        try {
+            if (isEmailChanged) {
+                authRemote.updateEmail(newEmail)
+            }
+
+            userRemote.upsertUser(user.toNetwork())
+            userDao.upsert(user.toEntity())
+
+        } catch (e: FirebaseAuthRecentLoginRequiredException) {
+            throw e
+        } catch (e: FirebaseAuthUserCollisionException) {
+            throw Exception("This Email is already in use")
+        } catch (e: Exception) {
+            throw e
+        }
+    }
+
+    override suspend fun reLoginAndRetry(email: String, pass: String, userToSave: User) {
+        authRemote.reauthenticate(email, pass)
+        upsertUser(userToSave)
+    }
+
+    override suspend fun changePassword(currentPass: String, newPass: String): Result<Unit> {
+        return try {
+            val user = authRemote.getCurrentUser()
+                ?: return Result.failure(Exception("User not found"))
+            val email = user.email
+                ?: return Result.failure(Exception("User email not found"))
+
+            authRemote.reauthenticate(email, currentPass)
+            authRemote.updatePassword(newPass)
+
+            Result.success(Unit)
+        } catch (e: FirebaseAuthInvalidCredentialsException) {
+            Result.failure(Exception("Invalid current password"))
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     private fun startSync(userId: String) {
         val request = OneTimeWorkRequestBuilder<SyncWorker>()
             .setInputData(workDataOf("USER_ID" to userId))
@@ -99,6 +150,7 @@ class UserRepositoryImpl(
         return userDao.getUser(userId)?.toDomain()
     }
 
+    // TODO("Update Email on firebase Auth")
     override suspend fun upsertUser(user: User) {
         userDao.upsert(user.toEntity())
         try {

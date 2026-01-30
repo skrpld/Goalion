@@ -82,6 +82,35 @@ class LogoutUseCase(
     }
 }
 
+class ReauthenticateAndSaveUseCase(
+    private val authRepository: AuthRepository
+) {
+    suspend operator fun invoke(email: String, pass: String, userToSave: User) {
+        authRepository.reLoginAndRetry(email, pass, userToSave)
+    }
+}
+
+class ChangePasswordUseCase(
+    private val authRepository: AuthRepository
+) {
+    suspend operator fun invoke(currentPass: String, newPass: String, confirmNewPass: String): Result<Unit> {
+        if (currentPass.isBlank()) {
+            return Result.failure(IllegalArgumentException("Current password cannot be empty"))
+        }
+        if (newPass.length < 6) {
+            return Result.failure(IllegalArgumentException("New password must be at least 6 characters long"))
+        }
+        if (newPass != confirmNewPass) {
+            return Result.failure(IllegalArgumentException("New passwords do not match"))
+        }
+        if (currentPass == newPass) {
+            return Result.failure(IllegalArgumentException("New password cannot be the same as the old one"))
+        }
+
+        return authRepository.changePassword(currentPass, newPass)
+    }
+}
+
 /**
  * === User ===
  */
@@ -102,12 +131,12 @@ class UpdateUserUseCase(
     private val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
 
     suspend operator fun invoke(id: String, name: String, email: String) {
-        if (id.isBlank()) throw IllegalArgumentException("User ID cannot be empty")
-
+        if (id.isBlank()) {
+            throw IllegalArgumentException("User ID cannot be empty")
+        }
         if (!name.matches(nameRegex)) {
             throw IllegalArgumentException("Name must contain only English letters and digits, and be at least 6 characters long")
         }
-
         if (!email.matches(emailRegex)) {
             throw IllegalArgumentException("Invalid email format")
         }
@@ -129,8 +158,7 @@ class UpdateUserUseCase(
             }
         }
 
-        val updatedUser = User(
-            id = id,
+        val updatedUser = currentUser.copy(
             name = name,
             email = email
         )

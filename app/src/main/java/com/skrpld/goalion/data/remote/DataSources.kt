@@ -1,5 +1,6 @@
 package com.skrpld.goalion.data.remote
 
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
@@ -27,6 +28,22 @@ class AuthRemoteDataSource(private val firebaseAuth: FirebaseAuth = FirebaseAuth
 
     fun logout() {
         firebaseAuth.signOut()
+    }
+
+    suspend fun updateEmail(newEmail: String) {
+        val user = firebaseAuth.currentUser ?: throw Exception("No user logged in")
+        user.updateEmail(newEmail).await()
+    }
+
+    suspend fun reauthenticate(email: String, pass: String) {
+        val user = firebaseAuth.currentUser ?: return
+        val credential = EmailAuthProvider.getCredential(email, pass)
+        user.reauthenticate(credential).await()
+    }
+
+    suspend fun updatePassword(newPass: String) {
+        val user = firebaseAuth.currentUser ?: throw Exception("No user logged in")
+        user.updatePassword(newPass).await()
     }
 }
 class UserRemoteDataSource (private val firestore: FirebaseFirestore) {

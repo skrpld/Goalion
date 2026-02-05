@@ -1,15 +1,18 @@
 # Goalion — Минималистичный инструмент достижения целей
 
-[![Platform](https://img.shields.io/badge/Platform-Android-green.svg)](https://www.android.com)
-[![Kotlin](https://img.shields.io/badge/Language-Kotlin-purple.svg)](https://kotlinlang.org)
-[![Architecture](https://img.shields.io/badge/Architecture-MVVM%20+%20Clean-orange.svg)](https://developer.android.com/topic/architecture)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white)](https://www.android.com)
+[![Kotlin](https://img.shields.io/badge/Language-Kotlin-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
+[![Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
+[![Koin](https://img.shields.io/badge/DI-Koin-FFEB3B?logo=kotlin&logoColor=black)](https://insert-koin.io/)
+[![Firebase](https://img.shields.io/badge/Backend-Firebase-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com/)
+[![Room](https://img.shields.io/badge/Database-Room-3DDC84?logo=sqlite&logoColor=white)](https://developer.android.com/training/data-storage/room)
+[![License](https://img.shields.io/badge/License-GPL%20v3-red.svg)](LICENSE)
 
 **Goalion** — это практичное мобильное приложение для самоорганизации, созданное для тех, кто ценит чистоту интерфейса и эффективность. В отличие от тяжеловесных корпоративных планировщиков, Goalion фокусируется на главном: декомпозиции целей и удержании фокуса.
 
 ---
 
-## 🎯 Ключевые особенности
+## ✨ Ключевые особенности
 
 * **Декомпозиция целей:** Разделение масштабных целей на понятные и выполнимые задачи.
 * **Профилирование:** Группировка целей по разным сферам жизни (Работа, Хобби, Личное), чтобы избежать путаницы.
@@ -17,7 +20,7 @@
 * **Offline-first подход:** Полная работоспособность без интернета с последующей синхронизацией.
 * **Умные напоминания:** Гибкая система уведомлений, которая не даст забыть о важном.
 
-## 🛠 Стек технологий
+## 🧰 Стек технологий
 
 Проект демонстрирует современный подход к Android-разработке с использованием актуального стека библиотек:
 
@@ -27,13 +30,6 @@
 * **Database (Local):** [Room](https://developer.android.com/training/data-storage/room) — обертка над SQLite для надежного локального хранения.
 * **Backend/Auth (Cloud):** [Firebase](https://firebase.google.com/) — авторизация пользователей и синхронизация данных.
 * **Язык:** Kotlin (Coroutines, Flow).
-
-## 🏗 Архитектура
-
-Приложение спроектировано согласно принципам **Clean Architecture**, что разделяет проект на три независимых слоя:
-1.  **Data:** Реализация репозиториев, работа с Room и Firebase.
-2.  **Domain:** Чистая бизнес-логика (Use Cases и сущности).
-3.  **App (Presentation):** UI-компоненты на Compose и логика отображения в ViewModels.
 
 ## 🚀 Установка и запуск
 
@@ -56,5 +52,5 @@
 4.  **Запустите:**
     Выберите эмулятор или реальное устройство и нажмите **Run**.
 
-## Лицензия
+## 📜 Лицензия
 Распространяется под GNU General Public License v3.0. Подробности в файле [LICENSE](LICENSE).

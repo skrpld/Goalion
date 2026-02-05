@@ -16,6 +16,11 @@ import java.util.UUID
 /**
  * === Auth ===
  */
+
+/**
+ * Signs up a new user with validation.
+ * Validates credentials and creates user in both auth and user repositories.
+ */
 class SignUpUseCase(
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository
@@ -52,6 +57,10 @@ class SignUpUseCase(
     }
 }
 
+/**
+ * Signs in an existing user with validation.
+ * Authenticates user and initiates sync after successful login.
+ */
 class SignInUseCase(
     private val authRepository: AuthRepository
 ) {
@@ -74,6 +83,9 @@ class SignInUseCase(
     }
 }
 
+/**
+ * Logs out the current user.
+ */
 class LogoutUseCase(
     private val authRepository: AuthRepository
 ) {
@@ -82,6 +94,10 @@ class LogoutUseCase(
     }
 }
 
+/**
+ * Re-authenticates user and saves data.
+ * Used when operations require recent authentication.
+ */
 class ReauthenticateAndSaveUseCase(
     private val authRepository: AuthRepository
 ) {
@@ -90,6 +106,10 @@ class ReauthenticateAndSaveUseCase(
     }
 }
 
+/**
+ * Changes user password with validation.
+ * Re-authenticates before changing password.
+ */
 class ChangePasswordUseCase(
     private val authRepository: AuthRepository
 ) {
@@ -114,6 +134,11 @@ class ChangePasswordUseCase(
 /**
  * === User ===
  */
+
+/**
+ * Gets the currently authenticated user.
+ * Retrieves user from local storage using auth token.
+ */
 class GetUserUseCase(
     private val authRepository: AuthRepository,
     private val userRepository: UserRepository
@@ -124,6 +149,10 @@ class GetUserUseCase(
     }
 }
 
+/**
+ * Updates user information with validation.
+ * Checks for duplicate names/emails before updating.
+ */
 class UpdateUserUseCase(
     private val userRepository: UserRepository
 ) {
@@ -178,6 +207,11 @@ class DeleteUserUseCase(
 /**
  * === Profile ===
  */
+
+/**
+ * Gets all profiles for a user.
+ * Retrieves profiles from the profile repository.
+ */
 class GetProfilesUseCases(
     private val profileRepository: ProfileRepository
 ) {
@@ -186,6 +220,10 @@ class GetProfilesUseCases(
     }
 }
 
+/**
+ * Creates a new profile.
+ * Generates a new ID and saves the profile.
+ */
 class CreateProfileUseCase(
     private val profileRepository: ProfileRepository
 ) {
@@ -243,6 +281,11 @@ class SyncProfilesUseCase(
 /**
  * === Goal ===
  */
+
+/**
+ * Observes goals with their tasks for a profile.
+ * Returns a Flow that emits updated goal-task lists.
+ */
 class GetGoalsWithTasksUseCase(
     private val goalRepository: GoalRepository
 ) {
@@ -251,6 +294,10 @@ class GetGoalsWithTasksUseCase(
     }
 }
 
+/**
+ * Creates a new goal.
+ * Generates a new ID and saves the goal to repository.
+ */
 class CreateGoalUseCase(
     private val goalRepository: GoalRepository
 ) {
@@ -331,6 +378,11 @@ class SyncGoalUseCase(
 
 /**
  * === Task ===
+ */
+
+/**
+ * Creates a new task.
+ * Generates a new ID and saves the task to repository.
  */
 class CreateTaskUseCase(
     private val taskRepository: TaskRepository

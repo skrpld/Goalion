@@ -8,6 +8,9 @@ import androidx.room.PrimaryKey
 import androidx.room.Relation
 import java.util.UUID
 
+/**
+ * Goal with associated tasks for Room queries.
+ */
 data class GoalWithTasks(
     @Embedded
     val goal: GoalEntity,
@@ -20,7 +23,7 @@ data class GoalWithTasks(
 )
 
 /**
- * === Entities ===
+ * User entity for local database.
  */
 @Entity(tableName = "users")
 data class UserEntity(
@@ -35,6 +38,9 @@ data class UserEntity(
     val isDeleted: Boolean = false
 )
 
+/**
+ * Profile entity for local database.
+ */
 @Entity(
     tableName = "profiles",
     foreignKeys = [
@@ -60,6 +66,9 @@ data class ProfileEntity(
     val isDeleted: Boolean = false
 )
 
+/**
+ * Goal entity for local database.
+ */
 @Entity(
     tableName = "goals",
     foreignKeys = [
@@ -88,6 +97,9 @@ data class GoalEntity(
     val isDeleted: Boolean = false
 )
 
+/**
+ * Task entity for local database.
+ */
 @Entity(
     tableName = "tasks",
     foreignKeys = [

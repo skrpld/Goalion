@@ -33,7 +33,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 /**
- * === Auth ===
+ * Authentication repository implementation.
+ * Handles user authentication and manages sync operations after login.
  */
 class AuthRepositoryImpl(
     private val authRemote: AuthRemoteDataSource,
@@ -131,6 +132,11 @@ class AuthRepositoryImpl(
         }
     }
 
+    /**
+     * Starts a sync operation for the specified user.
+     *
+     * @param userId The unique identifier of the user to sync
+     */
     private fun startSync(userId: String) {
         val request = OneTimeWorkRequestBuilder<SyncWorker>()
             .setInputData(workDataOf("USER_ID" to userId))
@@ -140,7 +146,8 @@ class AuthRepositoryImpl(
 }
 
 /**
- * === User ===
+ * User repository implementation.
+ * Manages user data in local database and syncs with remote.
  */
 class UserRepositoryImpl(
     private val userDao: UserDao,
@@ -175,7 +182,8 @@ class UserRepositoryImpl(
 }
 
 /**
- * === Profile ===
+ * Profile repository implementation.
+ * Manages profile data and triggers sync operations.
  */
 class ProfileRepositoryImpl(
     private val profileDao: ProfileDao,
@@ -199,6 +207,11 @@ class ProfileRepositoryImpl(
         startSync(userId)
     }
 
+    /**
+     * Starts a sync operation for the specified user.
+     *
+     * @param userId The unique identifier of the user to sync
+     */
     private fun startSync(userId: String) {
         val request = OneTimeWorkRequestBuilder<SyncWorker>()
             .setInputData(workDataOf("USER_ID" to userId))
@@ -208,7 +221,8 @@ class ProfileRepositoryImpl(
 }
 
 /**
- * === Goal ===
+ * Goal repository implementation.
+ * Manages goal data and handles cascading sync operations for profiles.
  */
 class GoalRepositoryImpl(
     private val goalDao: GoalDao,
@@ -252,18 +266,30 @@ class GoalRepositoryImpl(
     }
 
     /**
-     * === Sync ===
+     * Triggers a sync operation for the profile associated with the specified goal.
+     *
+     * @param goalId The unique identifier of the goal
      */
     private suspend fun triggerSyncByGoalId(goalId: String) {
         val goal = goalDao.getGoal(goalId) ?: return
         scheduleSync(goal.profileId)
     }
 
+    /**
+     * Schedules a sync operation for the user associated with the specified profile.
+     *
+     * @param profileId The unique identifier of the profile
+     */
     private suspend fun scheduleSync(profileId: String) {
         val profile = profileDao.getProfile(profileId) ?: return
         enqueueWorker(profile.userId)
     }
 
+    /**
+     * Enqueues a sync worker for the specified user.
+     *
+     * @param userId The unique identifier of the user to sync
+     */
     private fun enqueueWorker(userId: String) {
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
@@ -283,7 +309,8 @@ class GoalRepositoryImpl(
 }
 
 /**
- * === Task ===
+ * Task repository implementation.
+ * Manages task data and handles cascading sync operations for goals and profiles.
  */
 class TaskRepositoryImpl(
     private val taskDao: TaskDao,
@@ -323,13 +350,20 @@ class TaskRepositoryImpl(
     }
 
     /**
-     * === Sync ===
+     * Triggers a sync operation for the profile associated with the specified task.
+     *
+     * @param taskId The unique identifier of the task
      */
     private suspend fun triggerSyncByTaskId(taskId: String) {
         val task = taskDao.getTask(taskId) ?: return
         scheduleSync(task.goalId)
     }
 
+    /**
+     * Schedules a sync operation for the user associated with the specified goal.
+     *
+     * @param goalId The unique identifier of the goal
+     */
     private suspend fun scheduleSync(goalId: String) {
         val goal = goalDao.getGoal(goalId) ?: return
         val profile = profileDao.getProfile(goal.profileId) ?: return
@@ -337,6 +371,11 @@ class TaskRepositoryImpl(
         enqueueWorker(profile.userId)
     }
 
+    /**
+     * Enqueues a sync worker for the specified user.
+     *
+     * @param userId The unique identifier of the user to sync
+     */
     private fun enqueueWorker(userId: String) {
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)

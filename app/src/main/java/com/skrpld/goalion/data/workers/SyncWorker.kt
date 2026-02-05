@@ -9,6 +9,11 @@ import com.skrpld.goalion.data.remote.*
 import kotlinx.coroutines.coroutineScope
 import java.util.Date
 
+/**
+ * Synchronization worker for data between local and remote.
+ * Performs bidirectional sync of profiles, goals, and tasks.
+ * Implements a push-pull strategy to sync unsynchronized data.
+ */
 class SyncWorker(
     context: Context,
     params: WorkerParameters,
@@ -51,6 +56,8 @@ class SyncWorker(
     /**
      * === Push ===
      */
+
+    /** Push unsynchronized profiles to remote */
     private suspend fun pushProfiles() {
         val unsynced = profileDao.getUnsynced()
         unsynced.forEach { entity ->
@@ -69,6 +76,7 @@ class SyncWorker(
         }
     }
 
+    /** Push unsynchronized goals to remote */
     private suspend fun pushGoals() {
         val unsynced = goalDao.getUnsynced()
         unsynced.forEach { entity ->
@@ -87,6 +95,7 @@ class SyncWorker(
         }
     }
 
+    /** Push unsynchronized tasks to remote */
     private suspend fun pushTasks() {
         val unsynced = taskDao.getUnsynced()
         unsynced.forEach { entity ->
@@ -108,6 +117,8 @@ class SyncWorker(
     /**
      * === Pull ===
      */
+
+    /** Pull updated profiles from remote */
     private suspend fun pullProfiles(userId: String) {
         val lastUpdate = profileDao.getLastUpdateTime(userId) ?: 0L
         val remoteProfiles = profileRemote.getProfilesUpdatedAfter(userId, lastUpdate)
@@ -117,6 +128,7 @@ class SyncWorker(
         }
     }
 
+    /** Pull updated goals from remote */
     private suspend fun pullGoals(profileIds: List<String>) {
         val lastUpdate = goalDao.getLastUpdateTime(profileIds) ?: 0L
         val date = Date(lastUpdate)
@@ -129,6 +141,7 @@ class SyncWorker(
         }
     }
 
+    /** Pull updated tasks from remote */
     private suspend fun pullTasks(goalIds: List<String>) {
         val lastUpdate = taskDao.getLastUpdateTime(goalIds) ?: 0L
         val date = Date(lastUpdate)

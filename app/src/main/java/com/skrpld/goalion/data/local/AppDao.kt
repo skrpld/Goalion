@@ -3,6 +3,10 @@ package com.skrpld.goalion.data.local
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * User data access object.
+ * Handles CRUD operations for user entities in local database.
+ */
 @Dao
 interface UserDao {
     @Upsert
@@ -15,6 +19,10 @@ interface UserDao {
     suspend fun getUser(userId: String): UserEntity?
 }
 
+/**
+ * Profile data access object.
+ * Handles CRUD operations for profile entities with sync and soft-delete capabilities.
+ */
 @Dao
 interface ProfileDao {
     @Upsert
@@ -45,6 +53,11 @@ interface ProfileDao {
     suspend fun getLastUpdateTime(userId: String): Long?
 }
 
+/**
+ * Goal data access object.
+ * Handles CRUD operations for goal entities with sync and soft-delete capabilities.
+ * Includes transactional query to fetch goals with their associated tasks.
+ */
 @Dao
 interface GoalDao {
     @Upsert
@@ -88,6 +101,10 @@ interface GoalDao {
     fun getGoalsWithTasksList(profileId: String): Flow<List<GoalWithTasks>>
 }
 
+/**
+ * Task data access object.
+ * Handles CRUD operations for task entities with sync and soft-delete capabilities.
+ */
 @Dao
 interface TaskDao {
     @Upsert

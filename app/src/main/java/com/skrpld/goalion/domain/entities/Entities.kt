@@ -2,13 +2,16 @@ package com.skrpld.goalion.domain.entities
 
 import com.android.identity.util.UUID
 
+/**
+ * Goal with associated tasks.
+ */
 data class GoalWithTasks(
     val goal: Goal,
     val tasks: List<Task>
 )
 
 /**
- * === Entities ===
+ * User entity.
  */
 data class User(
     val id: String = UUID.randomUUID().toString(),
@@ -17,6 +20,9 @@ data class User(
     val updatedAt: Long = System.currentTimeMillis()
 )
 
+/**
+ * Profile entity.
+ */
 data class Profile(
     val id: String = UUID.randomUUID().toString(),
     val userId: String,
@@ -25,6 +31,9 @@ data class Profile(
     val updatedAt: Long = System.currentTimeMillis()
 )
 
+/**
+ * Goal entity.
+ */
 data class Goal(
     val id: String = UUID.randomUUID().toString(),
     val profileId: String,
@@ -36,6 +45,9 @@ data class Goal(
     val updatedAt: Long = System.currentTimeMillis()
 )
 
+/**
+ * Task entity.
+ */
 data class Task(
     val id: String = UUID.randomUUID().toString(),
     val goalId: String,

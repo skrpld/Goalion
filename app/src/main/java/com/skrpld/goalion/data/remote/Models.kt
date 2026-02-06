@@ -41,6 +41,8 @@ data class NetworkGoal(
     val status: Boolean = false,
     val priority: Int = 0,
     val order: Int = 0,
+    val startDate: Long = System.currentTimeMillis(),
+    val targetDate: Long = System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000L, // Default: 1 week from now
 
     @ServerTimestamp
     val updatedAt: Date? = null,
@@ -58,6 +60,8 @@ data class NetworkTask(
     val status: Boolean = false,
     val priority: Int = 0,
     val order: Int = 0,
+    val startDate: Long = System.currentTimeMillis(),
+    val targetDate: Long = System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000L, // Default: 1 week from now
 
     @ServerTimestamp
     val updatedAt: Date? = null,

@@ -19,6 +19,8 @@ fun GoalEntity.toDomain(): Goal = Goal(
     status = status,
     priority = priority,
     order = order,
+    startDate = startDate,
+    targetDate = targetDate,
     updatedAt = updatedAt
 )
 
@@ -37,6 +39,8 @@ fun Goal.toEntity(isSynced: Boolean = false, isDeleted: Boolean = false): GoalEn
     status = status,
     priority = priority,
     order = order,
+    startDate = startDate,
+    targetDate = targetDate,
     updatedAt = updatedAt,
     isSynced = isSynced,
     isDeleted = isDeleted
@@ -74,6 +78,8 @@ fun GoalEntity.toNetwork(): NetworkGoal = NetworkGoal(
     status = status,
     priority = priority,
     order = order,
+    startDate = startDate,
+    targetDate = targetDate,
     updatedAt = null,
     isDeleted = isDeleted
 )
@@ -91,6 +97,8 @@ fun NetworkGoal.toEntity(): GoalEntity = GoalEntity(
     status = status,
     priority = priority,
     order = order,
+    startDate = startDate,
+    targetDate = targetDate,
     updatedAt = updatedAt?.time ?: System.currentTimeMillis(),
     isSynced = true,
     isDeleted = isDeleted
@@ -125,6 +133,8 @@ fun NetworkGoal.toDomain(): Goal = Goal(
     status = status,
     priority = priority,
     order = order,
+    startDate = startDate,
+    targetDate = targetDate,
     updatedAt = updatedAt?.time ?: System.currentTimeMillis()
 )
 
@@ -142,6 +152,8 @@ fun Goal.toNetwork(isDeleted: Boolean = false): NetworkGoal = NetworkGoal(
     status = status,
     priority = priority,
     order = order,
+    startDate = startDate,
+    targetDate = targetDate,
     updatedAt = null,
     isDeleted = isDeleted
 )

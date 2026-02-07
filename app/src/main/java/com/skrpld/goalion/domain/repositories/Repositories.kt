@@ -25,8 +25,8 @@ interface AuthRepository {
  */
 interface UserRepository {
     suspend fun getUser(userId: String): User?
-    suspend fun upsertUser(user: User)
-    suspend fun deleteUser(userId: String)
+    suspend fun upsert(user: User)
+    suspend fun delete(userId: String)
     suspend fun isNameTaken(name: String): Boolean
     suspend fun isEmailTaken(email: String): Boolean
 }
@@ -36,9 +36,9 @@ interface UserRepository {
  */
 interface ProfileRepository {
     suspend fun getProfilesByUser(userId: String): List<Profile>
-    suspend fun upsertProfile(profile: Profile)
-    suspend fun deleteProfile(profileId: String)
-    suspend fun syncProfiles(userId: String)
+    suspend fun upsert(profile: Profile)
+    suspend fun delete(profileId: String)
+    suspend fun sync(userId: String)
 }
 
 /**
@@ -46,22 +46,30 @@ interface ProfileRepository {
  */
 interface GoalRepository {
     fun getGoalsWithTasks(profileId: String): Flow<List<GoalWithTasks>>
-    suspend fun upsertGoal(goal: Goal)
-    suspend fun deleteGoal(goalId: String)
-    suspend fun updateGoalStatus(goalId: String, status: Boolean)
-    suspend fun updateGoalPriority(goalId: String, priority: Int)
-    suspend fun updateGoalOrder(goalId: String, order: Int)
-    suspend fun syncGoal(profileId: String)
+    suspend fun upsert(goal: Goal)
+    suspend fun delete(goalId: String)
+    suspend fun updateTitle(goalId: String, title: String)
+    suspend fun updateDescription(goalId: String, description: String)
+    suspend fun updateStatus(goalId: String, status: Boolean)
+    suspend fun updatePriority(goalId: String, priority: Int)
+    suspend fun updateOrder(goalId: String, order: Int)
+    suspend fun updateStartDate(goalId: String, startDate: Long)
+    suspend fun updateTargetDate(goalId: String, targetDate: Long)
+    suspend fun sync(profileId: String)
 }
 
 /**
  * Task repository.
  */
 interface TaskRepository {
-    suspend fun upsertTask(task: Task)
-    suspend fun deleteTask(taskId: String)
-    suspend fun updateTaskStatus(taskId: String, status: Boolean)
-    suspend fun updateTaskPriority(taskId: String, priority: Int)
-    suspend fun updateTaskOrder(taskId: String, order: Int)
-    suspend fun syncTask(goalId: String)
+    suspend fun upsert(task: Task)
+    suspend fun delete(taskId: String)
+    suspend fun updateTitle(taskId: String, title: String)
+    suspend fun updateDescription(taskId: String, description: String)
+    suspend fun updateStatus(taskId: String, status: Boolean)
+    suspend fun updatePriority(taskId: String, priority: Int)
+    suspend fun updateOrder(taskId: String, order: Int)
+    suspend fun updateStartDate(taskId: String, startDate: Long)
+    suspend fun updateTargetDate(taskId: String, targetDate: Long)
+    suspend fun sync(goalId: String)
 }

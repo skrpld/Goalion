@@ -81,6 +81,19 @@ interface GoalDao {
     @Query("UPDATE goals SET `order` = :order, updatedAt = :ts, isSynced = 0 WHERE id = :id")
     suspend fun updateOrder(id: String, order: Int, ts: Long = System.currentTimeMillis())
 
+    @Query("UPDATE goals SET startDate = :startDate, updatedAt = :ts, isSynced = 0 WHERE id = :id")
+    suspend fun updateStartDate(id: String, startDate: Long, ts: Long = System.currentTimeMillis())
+
+    @Query("UPDATE goals SET targetDate = :targetDate, updatedAt = :ts, isSynced = 0 WHERE id = :id")
+    suspend fun updateTargetDate(id: String, targetDate: Long, ts: Long = System.currentTimeMillis())
+
+    @Query("UPDATE goals SET title = :title, updatedAt = :ts, isSynced = 0 WHERE id = :id")
+    suspend fun updateTitle(id: String, title: String, ts: Long = System.currentTimeMillis())
+
+    @Query("UPDATE goals SET description = :description, updatedAt = :ts, isSynced = 0 WHERE id = :id")
+    suspend fun updateDescription(id: String, description: String, ts: Long = System.currentTimeMillis())
+
+
     @Query("SELECT * FROM goals WHERE isSynced = 0")
     suspend fun getUnsynced(): List<GoalEntity>
 
@@ -127,6 +140,19 @@ interface TaskDao {
 
     @Query("UPDATE tasks SET `order` = :order, updatedAt = :ts, isSynced = 0 WHERE id = :id")
     suspend fun updateOrder(id: String, order: Int, ts: Long = System.currentTimeMillis())
+
+    @Query("UPDATE tasks SET startDate = :startDate, updatedAt = :ts, isSynced = 0 WHERE id = :id")
+    suspend fun updateStartDate(id: String, startDate: Long, ts: Long = System.currentTimeMillis())
+
+    @Query("UPDATE tasks SET targetDate = :targetDate, updatedAt = :ts, isSynced = 0 WHERE id = :id")
+    suspend fun updateTargetDate(id: String, targetDate: Long, ts: Long = System.currentTimeMillis())
+
+    @Query("UPDATE tasks SET title = :title, updatedAt = :ts, isSynced = 0 WHERE id = :id")
+    suspend fun updateTitle(id: String, title: String, ts: Long = System.currentTimeMillis())
+
+    @Query("UPDATE tasks SET description = :description, updatedAt = :ts, isSynced = 0 WHERE id = :id")
+    suspend fun updateDescription(id: String, description: String, ts: Long = System.currentTimeMillis())
+
 
     @Query("SELECT * FROM tasks WHERE id = :id")
     suspend fun getTask(id: String): TaskEntity?

@@ -151,10 +151,11 @@ class GetUserUseCase(
 
 /**
  * Updates user information with validation.
- * Checks for duplicate names/emails before updating.
+ * Checks for duplicate names/emails before updating and handles Firebase Auth updates.
  */
 class UpdateUserUseCase(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val authRepository: AuthRepository
 ) {
     private val nameRegex = Regex("^[a-zA-Z0-9]{6,}$")
     private val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
@@ -192,7 +193,8 @@ class UpdateUserUseCase(
             email = email
         )
 
-        userRepository.upsertUser(updatedUser)
+        // Use AuthRepository which properly handles Firebase Auth updates
+        authRepository.upsertUser(updatedUser)
     }
 }
 
@@ -200,7 +202,7 @@ class DeleteUserUseCase(
     private val userRepository: UserRepository
 ) {
     suspend operator fun invoke(userId: String) {
-        userRepository.deleteUser(userId)
+        userRepository.delete(userId)
     }
 }
 
@@ -239,7 +241,7 @@ class CreateProfileUseCase(
             description = description
         )
 
-        profileRepository.upsertProfile(profile)
+        profileRepository.upsert(profile)
     }
 }
 
@@ -258,7 +260,7 @@ class UpdateProfileUseCase(
             description = description
         )
 
-        profileRepository.upsertProfile(profile)
+        profileRepository.upsert(profile)
     }
 }
 
@@ -266,7 +268,7 @@ class DeleteProfileUseCase(
     private val profileRepository: ProfileRepository
 ) {
     suspend operator fun invoke(profileId: String) {
-        profileRepository.deleteProfile(profileId)
+        profileRepository.delete(profileId)
     }
 }
 
@@ -274,7 +276,7 @@ class SyncProfilesUseCase(
     private val profileRepository: ProfileRepository
 ) {
     suspend operator fun invoke(userId: String) {
-        profileRepository.syncProfiles(userId)
+        profileRepository.sync(userId)
     }
 }
 
@@ -313,7 +315,7 @@ class CreateGoalUseCase(
             description = description
         )
 
-        goalRepository.upsertGoal(goal)
+        goalRepository.upsert(goal)
     }
 }
 
@@ -332,7 +334,7 @@ class UpdateGoalUseCase(
             description = description
         )
 
-        goalRepository.upsertGoal(goal)
+        goalRepository.upsert(goal)
     }
 }
 
@@ -340,7 +342,7 @@ class DeleteGoalUseCase(
     private val goalRepository: GoalRepository
 ) {
     suspend operator fun invoke(goalId: String) {
-        goalRepository.deleteGoal(goalId)
+        goalRepository.delete(goalId)
     }
 }
 
@@ -348,7 +350,7 @@ class UpdateGoalStatusUseCase(
     private val goalRepository: GoalRepository
 ) {
     suspend operator fun invoke(goalId: String, status: Boolean) {
-        goalRepository.updateGoalStatus(goalId, status)
+        goalRepository.updateStatus(goalId, status)
     }
 }
 
@@ -356,7 +358,7 @@ class UpdateGoalPriorityUseCase(
     private val goalRepository: GoalRepository
 ) {
     suspend operator fun invoke(goalId: String, priority: Int) {
-        goalRepository.updateGoalPriority(goalId, priority)
+        goalRepository.updatePriority(goalId, priority)
     }
 }
 
@@ -364,7 +366,7 @@ class UpdateGoalOrderUseCase(
     private val goalRepository: GoalRepository
 ) {
     suspend operator fun invoke(goalId: String, order: Int) {
-        goalRepository.updateGoalOrder(goalId, order)
+        goalRepository.updateOrder(goalId, order)
     }
 }
 
@@ -372,7 +374,48 @@ class SyncGoalUseCase(
     private val goalRepository: GoalRepository
 ) {
     suspend operator fun invoke(profileId: String) {
-        goalRepository.syncGoal(profileId)
+        goalRepository.sync(profileId)
+    }
+}
+
+class UpdateGoalTitleUseCase(
+    private val goalRepository: GoalRepository
+) {
+    suspend operator fun invoke(goalId: String, title: String) {
+        if (goalId.isBlank()) throw IllegalArgumentException("Goal ID cannot be empty")
+        if (title.isBlank()) throw IllegalArgumentException("Title cannot be empty")
+
+        goalRepository.updateTitle(goalId, title)
+    }
+}
+
+class UpdateGoalDescriptionUseCase(
+    private val goalRepository: GoalRepository
+) {
+    suspend operator fun invoke(goalId: String, description: String) {
+        if (goalId.isBlank()) throw IllegalArgumentException("Goal ID cannot be empty")
+
+        goalRepository.updateDescription(goalId, description)
+    }
+}
+
+class UpdateGoalStartDateUseCase(
+    private val goalRepository: GoalRepository
+) {
+    suspend operator fun invoke(goalId: String, startDate: Long) {
+        if (goalId.isBlank()) throw IllegalArgumentException("Goal ID cannot be empty")
+
+        goalRepository.updateStartDate(goalId, startDate)
+    }
+}
+
+class UpdateGoalTargetDateUseCase(
+    private val goalRepository: GoalRepository
+) {
+    suspend operator fun invoke(goalId: String, targetDate: Long) {
+        if (goalId.isBlank()) throw IllegalArgumentException("Goal ID cannot be empty")
+
+        goalRepository.updateTargetDate(goalId, targetDate)
     }
 }
 
@@ -399,7 +442,7 @@ class CreateTaskUseCase(
             description = description
         )
 
-        taskRepository.upsertTask(task)
+        taskRepository.upsert(task)
     }
 }
 
@@ -418,7 +461,7 @@ class UpdateTaskUseCase(
             description = description
         )
 
-        taskRepository.upsertTask(task)
+        taskRepository.upsert(task)
     }
 }
 
@@ -426,7 +469,7 @@ class DeleteTaskUseCase(
     private val taskRepository: TaskRepository
 ) {
     suspend operator fun invoke(taskId: String) {
-        taskRepository.deleteTask(taskId)
+        taskRepository.delete(taskId)
     }
 }
 
@@ -434,7 +477,7 @@ class UpdateTaskStatusUseCase(
     private val taskRepository: TaskRepository
 ) {
     suspend operator fun invoke(taskId: String, status: Boolean) {
-        taskRepository.updateTaskStatus(taskId, status)
+        taskRepository.updateStatus(taskId, status)
     }
 }
 
@@ -442,7 +485,7 @@ class UpdateTaskPriorityUseCase(
     private val taskRepository: TaskRepository
 ) {
     suspend operator fun invoke(taskId: String, priority: Int) {
-        taskRepository.updateTaskPriority(taskId, priority)
+        taskRepository.updatePriority(taskId, priority)
     }
 }
 
@@ -450,7 +493,7 @@ class UpdateTaskOrderUseCase(
     private val taskRepository: TaskRepository
 ) {
     suspend operator fun invoke(taskId: String, order: Int) {
-        taskRepository.updateTaskOrder(taskId, order)
+        taskRepository.updateOrder(taskId, order)
     }
 }
 
@@ -458,6 +501,47 @@ class SyncTaskUseCase(
     private val taskRepository: TaskRepository
 ) {
     suspend operator fun invoke(goalId: String) {
-        taskRepository.syncTask(goalId)
+        taskRepository.sync(goalId)
+    }
+}
+
+class UpdateTaskTitleUseCase(
+    private val taskRepository: TaskRepository
+) {
+    suspend operator fun invoke(taskId: String, title: String) {
+        if (taskId.isBlank()) throw IllegalArgumentException("Task ID cannot be empty")
+        if (title.isBlank()) throw IllegalArgumentException("Title cannot be empty")
+
+        taskRepository.updateTitle(taskId, title)
+    }
+}
+
+class UpdateTaskDescriptionUseCase(
+    private val taskRepository: TaskRepository
+) {
+    suspend operator fun invoke(taskId: String, description: String) {
+        if (taskId.isBlank()) throw IllegalArgumentException("Task ID cannot be empty")
+
+        taskRepository.updateDescription(taskId, description)
+    }
+}
+
+class UpdateTaskStartDateUseCase(
+    private val taskRepository: TaskRepository
+) {
+    suspend operator fun invoke(taskId: String, startDate: Long) {
+        if (taskId.isBlank()) throw IllegalArgumentException("Task ID cannot be empty")
+
+        taskRepository.updateStartDate(taskId, startDate)
+    }
+}
+
+class UpdateTaskTargetDateUseCase(
+    private val taskRepository: TaskRepository
+) {
+    suspend operator fun invoke(taskId: String, targetDate: Long) {
+        if (taskId.isBlank()) throw IllegalArgumentException("Task ID cannot be empty")
+
+        taskRepository.updateTargetDate(taskId, targetDate)
     }
 }

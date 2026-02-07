@@ -19,6 +19,8 @@ fun TaskEntity.toDomain(): Task = Task(
     status = status,
     priority = priority,
     order = order,
+    startDate = startDate,
+    targetDate = targetDate,
     updatedAt = updatedAt
 )
 
@@ -37,6 +39,8 @@ fun Task.toEntity(isSynced: Boolean = false, isDeleted: Boolean = false): TaskEn
     status = status,
     priority = priority,
     order = order,
+    startDate = startDate,
+    targetDate = targetDate,
     updatedAt = updatedAt,
     isSynced = isSynced,
     isDeleted = isDeleted
@@ -74,6 +78,8 @@ fun TaskEntity.toNetwork(): NetworkTask = NetworkTask(
     status = status,
     priority = priority,
     order = order,
+    startDate = startDate,
+    targetDate = targetDate,
     updatedAt = null,
     isDeleted = isDeleted
 )
@@ -91,6 +97,8 @@ fun NetworkTask.toEntity(): TaskEntity = TaskEntity(
     status = status,
     priority = priority,
     order = order,
+    startDate = startDate,
+    targetDate = targetDate,
     updatedAt = updatedAt?.time ?: System.currentTimeMillis(),
     isSynced = true,
     isDeleted = isDeleted
@@ -125,6 +133,8 @@ fun NetworkTask.toDomain(): Task = Task(
     status = status,
     priority = priority,
     order = order,
+    startDate = startDate,
+    targetDate = targetDate,
     updatedAt = updatedAt?.time ?: System.currentTimeMillis()
 )
 
@@ -142,6 +152,8 @@ fun Task.toNetwork(isDeleted: Boolean = false): NetworkTask = NetworkTask(
     status = status,
     priority = priority,
     order = order,
+    startDate = startDate,
+    targetDate = targetDate,
     updatedAt = null,
     isDeleted = isDeleted
 )

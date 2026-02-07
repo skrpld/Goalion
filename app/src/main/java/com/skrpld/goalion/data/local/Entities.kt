@@ -91,6 +91,8 @@ data class GoalEntity(
     val status: Boolean = false,
     val priority: Int = 1,
     val order: Int = 0,
+    val startDate: Long = System.currentTimeMillis(),
+    val targetDate: Long = System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000L, // Default: 1 week from now
 
     val updatedAt: Long = System.currentTimeMillis(),
     val isSynced: Boolean = false,
@@ -122,6 +124,8 @@ data class TaskEntity(
     val status: Boolean = false,
     val priority: Int = 1,
     val order: Int = 0,
+    val startDate: Long = System.currentTimeMillis(),
+    val targetDate: Long = System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000L, // Default: 1 week from now
 
     val updatedAt: Long = System.currentTimeMillis(),
     val isSynced: Boolean = false,

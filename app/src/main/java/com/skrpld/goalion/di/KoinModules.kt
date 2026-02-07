@@ -64,7 +64,7 @@ val domainModule = module {
     factory { ChangePasswordUseCase(get()) }
 
     factory { GetUserUseCase(get(), get()) }
-    factory { UpdateUserUseCase(get()) }
+    factory { UpdateUserUseCase(get(), get()) }
     factory { DeleteUserUseCase(get()) }
 
     factory { GetProfilesUseCases(get()) }

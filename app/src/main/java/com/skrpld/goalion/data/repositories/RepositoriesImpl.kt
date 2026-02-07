@@ -18,6 +18,7 @@ import com.skrpld.goalion.data.mappers.toEntity
 import com.skrpld.goalion.data.mappers.toNetwork
 import com.skrpld.goalion.data.remote.AuthRemoteDataSource
 import com.skrpld.goalion.data.remote.UserRemoteDataSource
+import com.skrpld.goalion.data.util.SyncUtil
 import com.skrpld.goalion.data.workers.SyncWorker
 import com.skrpld.goalion.domain.entities.GoalWithTasks
 import com.skrpld.goalion.domain.entities.Goal
@@ -157,8 +158,7 @@ class UserRepositoryImpl(
         return userDao.getUser(userId)?.toDomain()
     }
 
-    // TODO("Update Email on firebase Auth")
-    override suspend fun upsertUser(user: User) {
+    override suspend fun upsert(user: User) {
         userDao.upsert(user.toEntity())
         try {
             userRemote.upsertUser(user.toNetwork())
@@ -167,7 +167,7 @@ class UserRepositoryImpl(
         }
     }
 
-    override suspend fun deleteUser(userId: String) {
+    override suspend fun delete(userId: String) {
         userDao.delete(userId)
         userRemote.deleteUser(userId)
     }
@@ -194,16 +194,16 @@ class ProfileRepositoryImpl(
         return profileDao.getProfilesByUser(userId).map { it.toDomain() }
     }
 
-    override suspend fun upsertProfile(profile: Profile) {
+    override suspend fun upsert(profile: Profile) {
         profileDao.upsert(profile.toEntity())
         startSync(profile.userId)
     }
 
-    override suspend fun deleteProfile(profileId: String) {
+    override suspend fun delete(profileId: String) {
         profileDao.softDelete(profileId)
     }
 
-    override suspend fun syncProfiles(userId: String) {
+    override suspend fun sync(userId: String) {
         startSync(userId)
     }
 
@@ -229,82 +229,62 @@ class GoalRepositoryImpl(
     private val profileDao: ProfileDao,
     private val workManager: WorkManager
 ) : GoalRepository {
+    
+    private val syncUtil = SyncUtil(goalDao, profileDao, workManager)
 
     override fun getGoalsWithTasks(profileId: String): Flow<List<GoalWithTasks>> {
         return goalDao.getGoalsWithTasksList(profileId)
             .map { list -> list.toDomain() }
     }
 
-    override suspend fun upsertGoal(goal: Goal) {
+    override suspend fun upsert(goal: Goal) {
         goalDao.upsert(goal.toEntity())
-        scheduleSync(goal.profileId)
+        syncUtil.scheduleSyncByProfileId(goal.profileId)
     }
 
-    override suspend fun deleteGoal(goalId: String) {
+    override suspend fun delete(goalId: String) {
         val goal = goalDao.getGoal(goalId)
         goalDao.softDelete(goalId)
-        goal?.let { scheduleSync(it.profileId) }
+        goal?.let { syncUtil.scheduleSyncByProfileId(it.profileId) }
     }
 
-    override suspend fun updateGoalStatus(goalId: String, status: Boolean) {
+    override suspend fun updateStatus(goalId: String, status: Boolean) {
         goalDao.updateStatus(goalId, status)
-        triggerSyncByGoalId(goalId)
+        syncUtil.triggerSyncByGoalId(goalId)
     }
 
-    override suspend fun updateGoalPriority(goalId: String, priority: Int) {
+    override suspend fun updatePriority(goalId: String, priority: Int) {
         goalDao.updatePriority(goalId, priority)
-        triggerSyncByGoalId(goalId)
+        syncUtil.triggerSyncByGoalId(goalId)
     }
 
-    override suspend fun updateGoalOrder(goalId: String, order: Int) {
+    override suspend fun updateOrder(goalId: String, order: Int) {
         goalDao.updateOrder(goalId, order)
-        triggerSyncByGoalId(goalId)
+        syncUtil.triggerSyncByGoalId(goalId)
     }
 
-    override suspend fun syncGoal(profileId: String) {
-        scheduleSync(profileId)
+    override suspend fun updateStartDate(goalId: String, startDate: Long) {
+        goalDao.updateStartDate(goalId, startDate)
+        syncUtil.triggerSyncByGoalId(goalId)
     }
 
-    /**
-     * Triggers a sync operation for the profile associated with the specified goal.
-     *
-     * @param goalId The unique identifier of the goal
-     */
-    private suspend fun triggerSyncByGoalId(goalId: String) {
-        val goal = goalDao.getGoal(goalId) ?: return
-        scheduleSync(goal.profileId)
+    override suspend fun updateTitle(goalId: String, title: String) {
+        goalDao.updateTitle(goalId, title)
+        syncUtil.triggerSyncByGoalId(goalId)
     }
 
-    /**
-     * Schedules a sync operation for the user associated with the specified profile.
-     *
-     * @param profileId The unique identifier of the profile
-     */
-    private suspend fun scheduleSync(profileId: String) {
-        val profile = profileDao.getProfile(profileId) ?: return
-        enqueueWorker(profile.userId)
+    override suspend fun updateDescription(goalId: String, description: String) {
+        goalDao.updateDescription(goalId, description)
+        syncUtil.triggerSyncByGoalId(goalId)
     }
 
-    /**
-     * Enqueues a sync worker for the specified user.
-     *
-     * @param userId The unique identifier of the user to sync
-     */
-    private fun enqueueWorker(userId: String) {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
+    override suspend fun updateTargetDate(goalId: String, targetDate: Long) {
+        goalDao.updateTargetDate(goalId, targetDate)
+        syncUtil.triggerSyncByGoalId(goalId)
+    }
 
-        val request = OneTimeWorkRequestBuilder<SyncWorker>()
-            .setInputData(workDataOf("USER_ID" to userId))
-            .setConstraints(constraints)
-            .build()
-
-        workManager.enqueueUniqueWork(
-            "sync_user_$userId",
-            ExistingWorkPolicy.REPLACE,
-            request
-        )
+    override suspend fun sync(profileId: String) {
+        syncUtil.scheduleSyncByProfileId(profileId)
     }
 }
 
@@ -318,78 +298,56 @@ class TaskRepositoryImpl(
     private val profileDao: ProfileDao,
     private val workManager: WorkManager
 ) : TaskRepository {
+    
+    private val syncUtil = SyncUtil(goalDao, profileDao, workManager)
 
-    override suspend fun upsertTask(task: Task) {
+    override suspend fun upsert(task: Task) {
         taskDao.upsert(task.toEntity())
-        scheduleSync(task.goalId)
+        syncUtil.scheduleSync(task.goalId)
     }
 
-    override suspend fun deleteTask(taskId: String) {
+    override suspend fun delete(taskId: String) {
         val task = taskDao.getTask(taskId)
         taskDao.softDelete(taskId)
-        task?.let { scheduleSync(it.goalId) }
+        task?.let { syncUtil.scheduleSync(it.goalId) }
     }
 
-    override suspend fun updateTaskStatus(taskId: String, status: Boolean) {
+    override suspend fun updateStatus(taskId: String, status: Boolean) {
         taskDao.updateStatus(taskId, status)
-        triggerSyncByTaskId(taskId)
+        syncUtil.triggerSyncByTaskId(taskId, taskDao)
     }
 
-    override suspend fun updateTaskPriority(taskId: String, priority: Int) {
+    override suspend fun updatePriority(taskId: String, priority: Int) {
         taskDao.updatePriority(taskId, priority)
-        triggerSyncByTaskId(taskId)
+        syncUtil.triggerSyncByTaskId(taskId, taskDao)
     }
 
-    override suspend fun updateTaskOrder(taskId: String, order: Int) {
+    override suspend fun updateOrder(taskId: String, order: Int) {
         taskDao.updateOrder(taskId, order)
-        triggerSyncByTaskId(taskId)
+        syncUtil.triggerSyncByTaskId(taskId, taskDao)
     }
 
-    override suspend fun syncTask(goalId: String) {
-        scheduleSync(goalId)
+    override suspend fun updateStartDate(taskId: String, startDate: Long) {
+        taskDao.updateStartDate(taskId, startDate)
+        syncUtil.triggerSyncByTaskId(taskId, taskDao)
     }
 
-    /**
-     * Triggers a sync operation for the profile associated with the specified task.
-     *
-     * @param taskId The unique identifier of the task
-     */
-    private suspend fun triggerSyncByTaskId(taskId: String) {
-        val task = taskDao.getTask(taskId) ?: return
-        scheduleSync(task.goalId)
+    override suspend fun updateTitle(taskId: String, title: String) {
+        taskDao.updateTitle(taskId, title)
+        syncUtil.triggerSyncByTaskId(taskId, taskDao)
     }
 
-    /**
-     * Schedules a sync operation for the user associated with the specified goal.
-     *
-     * @param goalId The unique identifier of the goal
-     */
-    private suspend fun scheduleSync(goalId: String) {
-        val goal = goalDao.getGoal(goalId) ?: return
-        val profile = profileDao.getProfile(goal.profileId) ?: return
-
-        enqueueWorker(profile.userId)
+    override suspend fun updateDescription(taskId: String, description: String) {
+        taskDao.updateDescription(taskId, description)
+        syncUtil.triggerSyncByTaskId(taskId, taskDao)
     }
 
-    /**
-     * Enqueues a sync worker for the specified user.
-     *
-     * @param userId The unique identifier of the user to sync
-     */
-    private fun enqueueWorker(userId: String) {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
+    override suspend fun updateTargetDate(taskId: String, targetDate: Long) {
+        taskDao.updateTargetDate(taskId, targetDate)
+        syncUtil.triggerSyncByTaskId(taskId, taskDao)
+    }
 
-        val request = OneTimeWorkRequestBuilder<SyncWorker>()
-            .setInputData(workDataOf("USER_ID" to userId))
-            .setConstraints(constraints)
-            .build()
-
-        workManager.enqueueUniqueWork(
-            "sync_user_$userId",
-            ExistingWorkPolicy.REPLACE,
-            request
-        )
+    override suspend fun sync(goalId: String) {
+        syncUtil.scheduleSync(goalId)
     }
 }

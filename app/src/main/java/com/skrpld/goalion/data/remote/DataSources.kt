@@ -63,13 +63,14 @@ class AuthRemoteDataSource(private val firebaseAuth: FirebaseAuth = FirebaseAuth
 
     /**
      * Updates the email address of the currently authenticated user.
+     * Uses the recommended verifyBeforeUpdateEmail method which sends a verification email.
      *
      * @param newEmail The new email address for the user
      * @throws Exception if no user is logged in
      */
     suspend fun updateEmail(newEmail: String) {
         val user = firebaseAuth.currentUser ?: throw Exception("No user logged in")
-        user.updateEmail(newEmail).await()
+        user.verifyBeforeUpdateEmail(newEmail).await()
     }
 
     /**

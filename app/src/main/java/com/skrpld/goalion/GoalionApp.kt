@@ -3,7 +3,7 @@ package com.skrpld.goalion
 import android.app.Application
 import com.skrpld.goalion.di.dataModule
 import com.skrpld.goalion.di.domainModule
-import com.skrpld.goalion.di.presentationModule
+import com.skrpld.goalion.di.timelineModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.koin.workManagerFactory
 import org.koin.core.context.GlobalContext.startKoin
@@ -15,7 +15,7 @@ class GoalionApp : Application() {
             androidContext(this@GoalionApp)
             workManagerFactory()
             modules(
-                presentationModule,
+                timelineModule,
                 domainModule,
                 dataModule,
             )

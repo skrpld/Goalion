@@ -1,6 +1,7 @@
 package com.skrpld.goalion.di
 
 import androidx.room.Room
+import androidx.work.WorkManager
 import com.google.firebase.firestore.FirebaseFirestore
 import com.skrpld.goalion.data.local.AppDatabase
 import com.skrpld.goalion.data.remote.GoalRemoteDataSource
@@ -36,24 +37,37 @@ import com.skrpld.goalion.domain.usecases.SignUpUseCase
 import com.skrpld.goalion.domain.usecases.SyncGoalUseCase
 import com.skrpld.goalion.domain.usecases.SyncProfilesUseCase
 import com.skrpld.goalion.domain.usecases.SyncTaskUseCase
+import com.skrpld.goalion.domain.usecases.UpdateGoalDescriptionUseCase
 import com.skrpld.goalion.domain.usecases.UpdateGoalOrderUseCase
 import com.skrpld.goalion.domain.usecases.UpdateGoalPriorityUseCase
+import com.skrpld.goalion.domain.usecases.UpdateGoalStartDateUseCase
 import com.skrpld.goalion.domain.usecases.UpdateGoalStatusUseCase
+import com.skrpld.goalion.domain.usecases.UpdateGoalTargetDateUseCase
+import com.skrpld.goalion.domain.usecases.UpdateGoalTitleUseCase
 import com.skrpld.goalion.domain.usecases.UpdateGoalUseCase
 import com.skrpld.goalion.domain.usecases.UpdateProfileUseCase
+import com.skrpld.goalion.domain.usecases.UpdateTaskDescriptionUseCase
 import com.skrpld.goalion.domain.usecases.UpdateTaskOrderUseCase
 import com.skrpld.goalion.domain.usecases.UpdateTaskPriorityUseCase
+import com.skrpld.goalion.domain.usecases.UpdateTaskStartDateUseCase
 import com.skrpld.goalion.domain.usecases.UpdateTaskStatusUseCase
+import com.skrpld.goalion.domain.usecases.UpdateTaskTargetDateUseCase
+import com.skrpld.goalion.domain.usecases.UpdateTaskTitleUseCase
 import com.skrpld.goalion.domain.usecases.UpdateTaskUseCase
 import com.skrpld.goalion.domain.usecases.UpdateUserUseCase
-import com.skrpld.goalion.ui.screens.home.HomeViewModel
+import com.skrpld.goalion.ui.screens.timeline.TimelineViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.dsl.worker
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
-val presentationModule = module {
-    viewModel { HomeViewModel() }
+val timelineModule = module {
+    viewModel {
+        TimelineViewModel(
+            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), // Goals
+            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()  // Tasks
+        )
+    }
 }
 
 val domainModule = module {
@@ -80,6 +94,10 @@ val domainModule = module {
     factory { UpdateGoalStatusUseCase(get()) }
     factory { UpdateGoalPriorityUseCase(get()) }
     factory { UpdateGoalOrderUseCase(get()) }
+    factory { UpdateGoalTitleUseCase(get()) }
+    factory { UpdateGoalDescriptionUseCase(get()) }
+    factory { UpdateGoalStartDateUseCase(get()) }
+    factory { UpdateGoalTargetDateUseCase(get()) }
     factory { SyncGoalUseCase(get()) }
 
     factory { CreateTaskUseCase(get()) }
@@ -88,6 +106,10 @@ val domainModule = module {
     factory { UpdateTaskStatusUseCase(get()) }
     factory { UpdateTaskPriorityUseCase(get()) }
     factory { UpdateTaskOrderUseCase(get()) }
+    factory { UpdateTaskTitleUseCase(get()) }
+    factory { UpdateTaskDescriptionUseCase(get()) }
+    factory { UpdateTaskStartDateUseCase(get()) }
+    factory { UpdateTaskTargetDateUseCase(get()) }
     factory { SyncTaskUseCase(get()) }
 }
 
@@ -104,6 +126,7 @@ val dataModule = module {
     single { GoalRemoteDataSource(get()) }
     single { TaskRemoteDataSource(get()) }
 
+    single { WorkManager.getInstance(androidContext()) }
     worker { SyncWorker(get(), get(), get(), get(), get(), get(), get(), get()) }
 
     single<AuthRepository> { AuthRepositoryImpl(get(), get(), get(), get()) }

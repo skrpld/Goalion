@@ -8,6 +8,9 @@ import androidx.room.PrimaryKey
 import androidx.room.Relation
 import java.util.UUID
 
+/**
+ * Goal with associated tasks for Room queries.
+ */
 data class GoalWithTasks(
     @Embedded
     val goal: GoalEntity,
@@ -20,7 +23,7 @@ data class GoalWithTasks(
 )
 
 /**
- * === Entities ===
+ * User entity for local database.
  */
 @Entity(tableName = "users")
 data class UserEntity(
@@ -35,6 +38,9 @@ data class UserEntity(
     val isDeleted: Boolean = false
 )
 
+/**
+ * Profile entity for local database.
+ */
 @Entity(
     tableName = "profiles",
     foreignKeys = [
@@ -60,6 +66,9 @@ data class ProfileEntity(
     val isDeleted: Boolean = false
 )
 
+/**
+ * Goal entity for local database.
+ */
 @Entity(
     tableName = "goals",
     foreignKeys = [
@@ -82,12 +91,17 @@ data class GoalEntity(
     val status: Boolean = false,
     val priority: Int = 1,
     val order: Int = 0,
+    val startDate: Long = System.currentTimeMillis(),
+    val targetDate: Long = System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000L, // Default: 1 week from now
 
     val updatedAt: Long = System.currentTimeMillis(),
     val isSynced: Boolean = false,
     val isDeleted: Boolean = false
 )
 
+/**
+ * Task entity for local database.
+ */
 @Entity(
     tableName = "tasks",
     foreignKeys = [
@@ -110,6 +124,8 @@ data class TaskEntity(
     val status: Boolean = false,
     val priority: Int = 1,
     val order: Int = 0,
+    val startDate: Long = System.currentTimeMillis(),
+    val targetDate: Long = System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000L, // Default: 1 week from now
 
     val updatedAt: Long = System.currentTimeMillis(),
     val isSynced: Boolean = false,

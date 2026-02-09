@@ -2,9 +2,11 @@ package com.skrpld.goalion.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.skrpld.goalion.domain.entities.AuthState
 import com.skrpld.goalion.ui.screens.SplashScreen
 import com.skrpld.goalion.ui.screens.timeline.TimelineScreen
 import com.skrpld.goalion.ui.screens.timeline.TimelineViewModel
@@ -20,7 +22,8 @@ fun AppNavigation() {
     val userViewModel: UserViewModel = koinViewModel()
     val authState = userViewModel.authState
 
-    val firstRoute = "timeline/custom_id" // if (authState.collectAsState().value == AuthState.LoggedIn) "timeline" else "user"
+    // TODO: Use existing id
+    val firstRoute = if (authState.collectAsState().value == AuthState.LoggedIn) "timeline/custom_id" else "user"
 
     NavHost(navController = navController, startDestination = "splash") {
         composable("splash") {

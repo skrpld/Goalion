@@ -77,33 +77,44 @@ class TimelineViewModel(
 
 // --- Domain: Goals ---
 
-    fun createNewGoal(title: String) {
+    fun manageGoal(
+        id: String? = null,
+        title: String? = null,
+        status: Boolean? = null,
+        isDelete: Boolean = false
+    ) {
         viewModelScope.launch {
             try {
-                goalInteractors.create(profileId, title, "")
+                if (isDelete && id != null) {
+                    goalInteractors.delete(id)
+                    return@launch
+                }
+
+                if (id == null) {
+                    goalInteractors.update(
+                        id = java.util.UUID.randomUUID().toString(),
+                        profileId = profileId,
+                        title = title ?: "New Goal",
+                        description = "", status = false, priority = 0, order = 0,
+                        startDate = System.currentTimeMillis(), targetDate = 0
+                    )
+                } else {
+                    val goal = getGoalById(id) ?: return@launch
+                    goalInteractors.update(
+                        id = goal.id,
+                        profileId = goal.profileId,
+                        title = title ?: goal.title,
+                        description = goal.description,
+                        status = status ?: goal.status,
+                        priority = goal.priority,
+                        order = goal.order,
+                        startDate = goal.startDate,
+                        targetDate = goal.targetDate
+                    )
+                }
             } catch (e: Exception) {
                 _uiState.update { it.copy(errorMessage = e.message) }
             }
-        }
-    }
-
-    fun onGoalTitleChanged(goalId: String, newTitle: String) {
-        val goal = getGoalById(goalId) ?: return
-        viewModelScope.launch {
-            goalInteractors.update(
-                id = goal.id,
-                profileId = goal.profileId,
-                title = newTitle,
-                description = goal.description
-                // TODO: update other fields
-            )
-        }
-    }
-
-    fun onGoalStatusChanged(goalId: String, isCompleted: Boolean) {
-        val goal = getGoalById(goalId) ?: return
-        viewModelScope.launch {
-            goalInteractors.update(goal.id, goal.profileId, goal.title, goal.description)
         }
     }
 
@@ -113,38 +124,47 @@ class TimelineViewModel(
 
 // --- Domain: Tasks ---
 
-    fun addTaskToGoal(goalId: String, title: String) {
+    fun manageTask(
+        id: String? = null,
+        goalId: String? = null,
+        title: String? = null,
+        status: Boolean? = null,
+        isDelete: Boolean = false
+    ) {
         viewModelScope.launch {
-            taskInteractors.create(goalId, title, "")
-            val index = _uiState.value.goals.indexOfFirst { it.data.goal.id == goalId }
-            if (index != -1 && !_uiState.value.goals[index].isExpanded) {
-                toggleGoalExpansion(index)
+            try {
+                if (isDelete && id != null) {
+                    taskInteractors.delete(id)
+                    return@launch
+                }
+
+                if (id == null && goalId != null) {
+                    taskInteractors.update(
+                        id = java.util.UUID.randomUUID().toString(),
+                        goalId = goalId,
+                        title = title ?: "New Task",
+                        description = "", status = false, priority = 0, order = 0,
+                        startDate = System.currentTimeMillis(), targetDate = 0
+                    )
+                    val index = _uiState.value.goals.indexOfFirst { it.data.goal.id == goalId }
+                    if (index != -1 && !_uiState.value.goals[index].isExpanded) toggleGoalExpansion(index)
+                } else if (id != null) {
+                    val task = getTaskById(id) ?: return@launch
+                    taskInteractors.update(
+                        id = task.id,
+                        goalId = task.goalId,
+                        title = title ?: task.title,
+                        description = task.description,
+                        status = status ?: task.status,
+                        priority = task.priority,
+                        order = task.order,
+                        startDate = task.startDate,
+                        targetDate = task.targetDate
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = e.message) }
             }
-        }
-    }
-
-    fun onTaskTitleChanged(taskId: String, newTitle: String) {
-        val task = getTaskById(taskId) ?: return
-        viewModelScope.launch {
-            taskInteractors.update(
-                id = task.id,
-                goalId = task.goalId,
-                title = newTitle,
-                description = task.description
-            )
-        }
-    }
-
-    fun onTaskStatusChanged(taskId: String, isCompleted: Boolean) {
-        val task = getTaskById(taskId) ?: return
-        viewModelScope.launch {
-            taskInteractors.update(
-                task.id,
-                task.goalId,
-                task.title,
-                task.description
-                // TODO: update other fields
-            )
         }
     }
 

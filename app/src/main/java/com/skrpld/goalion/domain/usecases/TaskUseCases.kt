@@ -41,7 +41,17 @@ class CreateTaskUseCase(
 class UpdateTaskUseCase(
     private val taskRepository: TaskRepository
 ) {
-    suspend operator fun invoke(id: String, goalId: String, title: String, description: String) {
+    suspend operator fun invoke(
+        id: String,
+        goalId: String,
+        title: String,
+        description: String,
+        status: Boolean,
+        priority: Int,
+        order: Int,
+        startDate: Long,
+        targetDate: Long
+    ) {
         if (id.isBlank()) throw IllegalArgumentException("Task ID cannot be empty for update")
 
         if (title.isBlank()) throw IllegalArgumentException("Title cannot be empty")
@@ -50,7 +60,12 @@ class UpdateTaskUseCase(
             id = id,
             goalId = goalId,
             title = title,
-            description = description
+            description = description,
+            status = status,
+            priority = priority,
+            order = order,
+            startDate = startDate,
+            targetDate = targetDate
         )
 
         taskRepository.upsert(task)

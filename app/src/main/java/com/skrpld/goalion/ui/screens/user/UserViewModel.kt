@@ -6,5 +6,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class UserViewModel() : ViewModel() {
-    val authState: StateFlow<AuthState> = MutableStateFlow(AuthState.LoggedOut)
+    // TODO: add auth and !!! CHANGE PRIMARY VALUE !!!
+    val authState: StateFlow<AuthState> = MutableStateFlow(AuthState.LoggedIn)
 }

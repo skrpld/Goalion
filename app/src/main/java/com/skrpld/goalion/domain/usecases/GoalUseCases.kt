@@ -56,7 +56,17 @@ class CreateGoalUseCase(
 class UpdateGoalUseCase(
     private val goalRepository: GoalRepository
 ) {
-    suspend operator fun invoke(id: String, profileId: String, title: String, description: String) {
+    suspend operator fun invoke(
+        id: String,
+        profileId: String,
+        title: String,
+        description: String,
+        status: Boolean,
+        priority: Int,
+        order: Int,
+        startDate: Long,
+        targetDate: Long
+    ) {
         if (id.isBlank()) throw IllegalArgumentException("Goal ID cannot be empty for update")
 
         if (title.isBlank()) throw IllegalArgumentException("Title cannot be empty")
@@ -65,7 +75,12 @@ class UpdateGoalUseCase(
             id = id,
             profileId = profileId,
             title = title,
-            description = description
+            description = description,
+            status = status,
+            priority = priority,
+            order = order,
+            startDate = startDate,
+            targetDate = targetDate
         )
 
         goalRepository.upsert(goal)

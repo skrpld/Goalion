@@ -1,17 +1,20 @@
 package com.skrpld.goalion.ui.screens.timeline
 
-import androidx.compose.foundation.Canvas
+import android.R.attr.shadowColor
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.skrpld.goalion.ui.theme.outlineVariant
 import java.util.*
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -21,50 +24,66 @@ import kotlin.math.roundToInt
 fun TimelineHeader(scrollOffsetX: Float) {
     val density = LocalDensity.current
     val dayWidthPx = with(density) { DAY_WIDTH.toPx() }
+    val borderColor = MaterialTheme.colorScheme.outlineVariant
 
-    Box(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
-            .height(50.dp)
-            .background(MaterialTheme.colorScheme.background)
-            .clipToBounds()
-    ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val startOffset = scrollOffsetX
-
-            val firstVisibleDayIndex = floor(startOffset / dayWidthPx).toInt()
-            val visibleDaysCount = ceil(size.width / dayWidthPx).toInt() + 2
-
-            val calendar = Calendar.getInstance()
-            calendar.set(Calendar.HOUR_OF_DAY, 0)
-            calendar.set(Calendar.MINUTE, 0)
-            calendar.set(Calendar.SECOND, 0)
-            calendar.set(Calendar.MILLISECOND, 0)
-            val baseTime = calendar.timeInMillis
-
-            for (i in 0..visibleDaysCount) {
-                val dayOffset = i + firstVisibleDayIndex
-                val x = (dayOffset * dayWidthPx) - startOffset
-
-                val dateMillis = baseTime + (dayOffset * MILLIS_IN_DAY)
-
+            .height(56.dp)
+            .background(MaterialTheme.colorScheme.surface)
+            .drawBehind {
                 drawLine(
-                    color = Color.Gray,
-                    start = Offset(x, 30f),
-                    end = Offset(x, size.height),
-                    strokeWidth = 1f
+                    color = borderColor,
+                    start = Offset(0f, size.height),
+                    end = Offset(size.width, size.height),
+                    strokeWidth = 1.dp.toPx()
                 )
             }
-        }
+            .clipToBounds()
+    ) {
+        val widthPx = with(density) { maxWidth.toPx() }
+        val calendar = remember { Calendar.getInstance() }
 
-        // TODO: Make normal date line
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .offset { androidx.compose.ui.unit.IntOffset(-scrollOffsetX.roundToInt(), 0) }
-        ) {
-            // TODO: Make normal row scroll virtualization
-            Text("Timeline Scroll Area", modifier = Modifier.padding(10.dp))
+        val firstVisibleDayIndex = floor(scrollOffsetX / dayWidthPx).toInt()
+        val visibleDaysCount = ceil(widthPx / dayWidthPx).toInt() + 2
+
+        for (i in -1..visibleDaysCount) {
+            val dayOffset = i + firstVisibleDayIndex
+            val x = (dayOffset * dayWidthPx) - scrollOffsetX
+
+            val dateMillis = remember(dayOffset) {
+                Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                    add(Calendar.DAY_OF_YEAR, dayOffset)
+                }.timeInMillis
+            }
+
+            calendar.timeInMillis = dateMillis
+            val dayName = calendar.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.SHORT, Locale.getDefault()) ?: ""
+            val dayNumber = calendar.get(Calendar.DAY_OF_MONTH).toString()
+
+            Column(
+                modifier = Modifier
+                    .width(DAY_WIDTH)
+                    .offset { IntOffset(x.roundToInt(), 0) }
+                    .fillMaxHeight(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = dayName.uppercase(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = dayNumber,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
         }
     }
 }

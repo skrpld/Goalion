@@ -8,16 +8,19 @@ import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.layout.LazyLayout
 import androidx.compose.foundation.lazy.layout.LazyLayoutItemProvider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
-import com.skrpld.goalion.domain.entities.GoalWithTasks
 import java.util.*
+import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -32,25 +35,16 @@ fun TimelineContent(
 ) {
     val density = LocalDensity.current
     val dayWidthPx = with(density) { DAY_WIDTH.toPx() }
-    val scope = rememberCoroutineScope()
-
-    val baseTime = remember {
-        val c = Calendar.getInstance()
-        c.set(Calendar.HOUR_OF_DAY, 0); c.set(Calendar.MINUTE, 0); c.set(Calendar.SECOND, 0); c.set(Calendar.MILLISECOND, 0)
-        c.timeInMillis
-    }
+    val gridColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
 
     val itemProvider = remember(goals) {
         object : LazyLayoutItemProvider {
             override val itemCount: Int = goals.size
-
-            @Composable
-            override fun Item(index: Int, key: Any) {
+            @Composable override fun Item(index: Int, key: Any) {
                 val item = goals[index]
-
                 val durationMs = item.data.goal.targetDate - item.data.goal.startDate
                 val daysDuration = durationMs.toFloat() / MILLIS_IN_DAY
-                val widthDp = max(daysDuration * DAY_WIDTH.value, 20f).dp
+                val widthDp = max(daysDuration * DAY_WIDTH.value, 40f).dp
 
                 TimelineItemCard(
                     item = item,
@@ -66,52 +60,55 @@ fun TimelineContent(
         modifier = Modifier
             .fillMaxSize()
             .clipToBounds()
-            .background(Color.White)
-            .draggable(
-                orientation = Orientation.Horizontal,
-                state = rememberDraggableState { delta ->
-                    onScroll(delta, Orientation.Horizontal)
+            .background(MaterialTheme.colorScheme.surface)
+            .drawBehind {
+                val firstVisibleDay = floor(scrollOffsetX / dayWidthPx).toInt()
+                val daysToDraw = ceil(size.width / dayWidthPx).toInt() + 1
+
+                for (i in 0..daysToDraw) {
+                    val x = ((i + firstVisibleDay) * dayWidthPx) - scrollOffsetX
+                    drawLine(
+                        color = gridColor,
+                        start = Offset(x, 0f),
+                        end = Offset(x, size.height),
+                        strokeWidth = 1f
+                    )
                 }
+            }
+            .draggable(
+                state = rememberDraggableState { delta -> onScroll(delta, Orientation.Horizontal) },
+                orientation = Orientation.Horizontal
             )
             .draggable(
-                orientation = Orientation.Vertical,
-                state = rememberDraggableState { delta ->
-                    onScroll(delta, Orientation.Vertical)
-                }
+                state = rememberDraggableState { delta -> onScroll(delta, Orientation.Vertical) },
+                orientation = Orientation.Vertical
             )
     ) { constraints ->
         val layoutWidth = constraints.maxWidth
         val layoutHeight = constraints.maxHeight
+        val placeables = mutableListOf<Triple<Placeable, Int, Int>>()
 
-        val placeables = ArrayList<Triple<Placeable, Int, Int>>()
-        var currentY = 0
+        var currentY = 24.dp.toPx().toInt()
+        val baseTime = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
 
-        for (i in 0 until goals.size) {
+        for (i in goals.indices) {
             val item = goals[i]
-
             val startOffsetMs = item.data.goal.startDate - baseTime
-            val startOffsetDays = startOffsetMs.toFloat() / MILLIS_IN_DAY
-            val xPosition = (startOffsetDays * dayWidthPx).roundToInt()
+            val xPosition = (startOffsetMs.toFloat() / MILLIS_IN_DAY * dayWidthPx).roundToInt()
 
-            val placeableList = compose(i).map { it.measure(Constraints()) }
-            val placeable = placeableList[0]
+            val placeable = compose(i).first().measure(Constraints())
             val height = placeable.height
 
-            val itemTop = currentY
-            val itemBottom = currentY + height
-            val isVisibleVertically = (itemBottom >= scrollOffsetY) && (itemTop <= scrollOffsetY + layoutHeight)
-
-            // TODO: make horizontal visible optimization
+            val isVisibleVertically = (currentY + height >= scrollOffsetY) &&
+                    (currentY <= scrollOffsetY + layoutHeight)
 
             if (isVisibleVertically) {
-                placeables.add(Triple(placeable, xPosition, itemTop))
+                placeables.add(Triple(placeable, xPosition, currentY))
             }
-
-            currentY += height + 20
-
-            if (currentY > scrollOffsetY + layoutHeight + 500) {
-                break
-            }
+            currentY += height + 16.dp.toPx().toInt()
         }
 
         layout(layoutWidth, layoutHeight) {

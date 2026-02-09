@@ -2,6 +2,11 @@ package com.skrpld.goalion.domain.entities
 
 import com.android.identity.util.UUID
 
+enum class AuthState {
+    LoggedIn,
+    LoggedOut
+}
+
 /**
  * Goal with associated tasks.
  */

@@ -3,42 +3,26 @@ package com.skrpld.goalion.ui.screens.timeline
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.skrpld.goalion.domain.entities.GoalWithTasks
-import com.skrpld.goalion.domain.usecases.CreateGoalUseCase
-import com.skrpld.goalion.domain.usecases.CreateTaskUseCase
-import com.skrpld.goalion.domain.usecases.DeleteGoalUseCase
-import com.skrpld.goalion.domain.usecases.DeleteTaskUseCase
-import com.skrpld.goalion.domain.usecases.GetGoalsWithTasksUseCase
-import com.skrpld.goalion.domain.usecases.SyncGoalUseCase
-import com.skrpld.goalion.domain.usecases.SyncTaskUseCase
-import com.skrpld.goalion.domain.usecases.UpdateGoalDescriptionUseCase
-import com.skrpld.goalion.domain.usecases.UpdateGoalOrderUseCase
-import com.skrpld.goalion.domain.usecases.UpdateGoalPriorityUseCase
-import com.skrpld.goalion.domain.usecases.UpdateGoalStartDateUseCase
-import com.skrpld.goalion.domain.usecases.UpdateGoalStatusUseCase
-import com.skrpld.goalion.domain.usecases.UpdateGoalTargetDateUseCase
-import com.skrpld.goalion.domain.usecases.UpdateGoalTitleUseCase
-import com.skrpld.goalion.domain.usecases.UpdateGoalUseCase
-import com.skrpld.goalion.domain.usecases.UpdateTaskDescriptionUseCase
-import com.skrpld.goalion.domain.usecases.UpdateTaskOrderUseCase
-import com.skrpld.goalion.domain.usecases.UpdateTaskPriorityUseCase
-import com.skrpld.goalion.domain.usecases.UpdateTaskStartDateUseCase
-import com.skrpld.goalion.domain.usecases.UpdateTaskStatusUseCase
-import com.skrpld.goalion.domain.usecases.UpdateTaskTargetDateUseCase
-import com.skrpld.goalion.domain.usecases.UpdateTaskTitleUseCase
-import com.skrpld.goalion.domain.usecases.UpdateTaskUseCase
-import kotlinx.coroutines.flow.collectLatest
+import com.skrpld.goalion.domain.usecases.GoalInteractors
+import com.skrpld.goalion.domain.usecases.TaskInteractors
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-val DAY_WIDTH = 48.dp
-const val MILLIS_IN_DAY = 24 * 60 * 60 * 1000L
+data class TimelineUiState(
+    val goals: List<TimelineGoalItem> = emptyList(),
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
+)
 
 data class TimelineGoalItem(
     val data: GoalWithTasks,
@@ -46,146 +30,145 @@ data class TimelineGoalItem(
 )
 
 class TimelineViewModel(
-    // TODO: Add all UseCases realisations
-    // --- Goal UseCases ---
-    private val getGoalsWithTasksUseCase: GetGoalsWithTasksUseCase,
-    private val createGoalUseCase: CreateGoalUseCase,
-    private val updateGoalUseCase: UpdateGoalUseCase,
-    private val deleteGoalUseCase: DeleteGoalUseCase,
-    private val updateGoalStatusUseCase: UpdateGoalStatusUseCase,
-    private val updateGoalPriorityUseCase: UpdateGoalPriorityUseCase,
-    private val updateGoalOrderUseCase: UpdateGoalOrderUseCase,
-    private val syncGoalUseCase: SyncGoalUseCase,
-    private val updateGoalTitleUseCase: UpdateGoalTitleUseCase,
-    private val updateGoalDescriptionUseCase: UpdateGoalDescriptionUseCase,
-    private val updateGoalStartDateUseCase: UpdateGoalStartDateUseCase,
-    private val updateGoalTargetDateUseCase: UpdateGoalTargetDateUseCase,
-
-    // --- Task UseCases ---
-    private val createTaskUseCase: CreateTaskUseCase,
-    private val updateTaskUseCase: UpdateTaskUseCase,
-    private val deleteTaskUseCase: DeleteTaskUseCase,
-    private val updateTaskStatusUseCase: UpdateTaskStatusUseCase,
-    private val updateTaskPriorityUseCase: UpdateTaskPriorityUseCase,
-    private val updateTaskOrderUseCase: UpdateTaskOrderUseCase,
-    private val syncTaskUseCase: SyncTaskUseCase,
-    private val updateTaskTitleUseCase: UpdateTaskTitleUseCase,
-    private val updateTaskDescriptionUseCase: UpdateTaskDescriptionUseCase,
-    private val updateTaskStartDateUseCase: UpdateTaskStartDateUseCase,
-    private val updateTaskTargetDateUseCase: UpdateTaskTargetDateUseCase
+    savedStateHandle: SavedStateHandle,
+    private val goalInteractors: GoalInteractors,
+    private val taskInteractors: TaskInteractors
 ) : ViewModel() {
-    private val _goals = mutableStateListOf<TimelineGoalItem>()
-    val goals: List<TimelineGoalItem> = _goals
+
+    private val profileId: String = savedStateHandle.get<String>("profileId") ?: "invalid_id"
+
+    private val _uiState = MutableStateFlow(TimelineUiState())
+    val uiState = _uiState.asStateFlow()
 
     var scrollOffsetY by mutableFloatStateOf(0f)
         private set
     var scrollOffsetX by mutableFloatStateOf(0f)
         private set
 
-    // TODO: Get it from current context
-    private val profileId = "user_default_id"
-
     init {
         observeData()
     }
 
     private fun observeData() {
-        viewModelScope.launch {
-            getGoalsWithTasksUseCase(profileId).collectLatest { dbData ->
-                val expandedIds = _goals.filter { it.isExpanded }.map { it.data.goal.id }.toSet()
+        _uiState.update { it.copy(isLoading = true) }
 
-                _goals.clear()
-                _goals.addAll(dbData.map { goalWithTasks ->
+        goalInteractors.getWithTasks(profileId)
+            .onEach { dbData ->
+                val expandedIds = _uiState.value.goals
+                    .filter { it.isExpanded }
+                    .map { it.data.goal.id }
+                    .toSet()
+
+                val items = dbData.map { goalWithTasks ->
                     TimelineGoalItem(
                         data = goalWithTasks,
                         isExpanded = goalWithTasks.goal.id in expandedIds
                     )
-                })
+                }
+                _uiState.update { it.copy(goals = items, isLoading = false) }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    private fun getGoalById(goalId: String) = _uiState.value.goals.find { it.data.goal.id == goalId }?.data?.goal
+    private fun getTaskById(taskId: String) = _uiState.value.goals
+        .flatMap { it.data.tasks }
+        .find { it.id == taskId }
+
+// --- Domain: Goals ---
+
+    fun createNewGoal(title: String) {
+        viewModelScope.launch {
+            try {
+                goalInteractors.create(profileId, title, "")
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = e.message) }
             }
         }
     }
 
-    // --- UI: Scroll ---
+    fun onGoalTitleChanged(goalId: String, newTitle: String) {
+        val goal = getGoalById(goalId) ?: return
+        viewModelScope.launch {
+            goalInteractors.update(
+                id = goal.id,
+                profileId = goal.profileId,
+                title = newTitle,
+                description = goal.description
+                // TODO: update other fields
+            )
+        }
+    }
+
+    fun onGoalStatusChanged(goalId: String, isCompleted: Boolean) {
+        val goal = getGoalById(goalId) ?: return
+        viewModelScope.launch {
+            goalInteractors.update(goal.id, goal.profileId, goal.title, goal.description)
+        }
+    }
+
+    fun deleteGoal(goalId: String) {
+        viewModelScope.launch { goalInteractors.delete(goalId) }
+    }
+
+// --- Domain: Tasks ---
+
+    fun addTaskToGoal(goalId: String, title: String) {
+        viewModelScope.launch {
+            taskInteractors.create(goalId, title, "")
+            val index = _uiState.value.goals.indexOfFirst { it.data.goal.id == goalId }
+            if (index != -1 && !_uiState.value.goals[index].isExpanded) {
+                toggleGoalExpansion(index)
+            }
+        }
+    }
+
+    fun onTaskTitleChanged(taskId: String, newTitle: String) {
+        val task = getTaskById(taskId) ?: return
+        viewModelScope.launch {
+            taskInteractors.update(
+                id = task.id,
+                goalId = task.goalId,
+                title = newTitle,
+                description = task.description
+            )
+        }
+    }
+
+    fun onTaskStatusChanged(taskId: String, isCompleted: Boolean) {
+        val task = getTaskById(taskId) ?: return
+        viewModelScope.launch {
+            taskInteractors.update(
+                task.id,
+                task.goalId,
+                task.title,
+                task.description
+                // TODO: update other fields
+            )
+        }
+    }
+
+    fun deleteTask(taskId: String) {
+        viewModelScope.launch { taskInteractors.delete(taskId) }
+    }
+
+// --- UI Logic ---
+
+    fun toggleGoalExpansion(index: Int) {
+        _uiState.update { state ->
+            val newList = state.goals.toMutableList()
+            if (index in newList.indices) {
+                newList[index] = newList[index].copy(isExpanded = !newList[index].isExpanded)
+            }
+            state.copy(goals = newList)
+        }
+    }
 
     fun onScroll(delta: Float, orientation: Orientation) {
         if (orientation == Orientation.Vertical) {
             scrollOffsetY = (scrollOffsetY - delta).coerceAtLeast(0f)
         } else {
             scrollOffsetX -= delta
-        }
-    }
-
-    fun toggleGoalExpansion(index: Int) {
-        if (index in _goals.indices) {
-            val item = _goals[index]
-            _goals[index] = item.copy(isExpanded = !item.isExpanded)
-        }
-    }
-
-    // --- Domain: Goals ---
-
-    fun createNewGoal(title: String) {
-        viewModelScope.launch {
-            try {
-                createGoalUseCase(profileId, title, "")
-            } catch (e: Exception) {
-                // TODO: Handle error (show snackbar)
-            }
-        }
-    }
-
-    fun onGoalTitleChanged(goalId: String, newTitle: String) {
-        viewModelScope.launch {
-            updateGoalTitleUseCase(goalId, newTitle)
-        }
-    }
-
-    fun onGoalStatusChanged(goalId: String, isCompleted: Boolean) {
-        viewModelScope.launch {
-            updateGoalStatusUseCase(goalId, isCompleted)
-        }
-    }
-
-    fun onGoalDateChanged(goalId: String, newStart: Long?, newTarget: Long?) {
-        viewModelScope.launch {
-            if (newStart != null) updateGoalStartDateUseCase(goalId, newStart)
-            if (newTarget != null) updateGoalTargetDateUseCase(goalId, newTarget)
-        }
-    }
-
-    fun deleteGoal(goalId: String) {
-        viewModelScope.launch {
-            deleteGoalUseCase(goalId)
-        }
-    }
-
-    // --- Domain: Tasks ---
-
-    fun addTaskToGoal(goalId: String, title: String) {
-        viewModelScope.launch {
-            createTaskUseCase(goalId, title, "")
-            val index = _goals.indexOfFirst { it.data.goal.id == goalId }
-            if (index != -1 && !_goals[index].isExpanded) {
-                toggleGoalExpansion(index)
-            }
-        }
-    }
-
-    fun onTaskStatusChanged(taskId: String, isCompleted: Boolean) {
-        viewModelScope.launch {
-            updateTaskStatusUseCase(taskId, isCompleted)
-        }
-    }
-
-    fun onTaskTitleChanged(taskId: String, newTitle: String) {
-        viewModelScope.launch {
-            updateTaskTitleUseCase(taskId, newTitle)
-        }
-    }
-
-    fun deleteTask(taskId: String) {
-        viewModelScope.launch {
-            deleteTaskUseCase(taskId)
         }
     }
 }

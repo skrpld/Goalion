@@ -19,6 +19,7 @@ import com.skrpld.goalion.domain.repositories.GoalRepository
 import com.skrpld.goalion.domain.repositories.ProfileRepository
 import com.skrpld.goalion.domain.repositories.TaskRepository
 import com.skrpld.goalion.domain.repositories.UserRepository
+import com.skrpld.goalion.domain.usecases.AuthInteractors
 import com.skrpld.goalion.domain.usecases.ChangePasswordUseCase
 import com.skrpld.goalion.domain.usecases.CreateGoalUseCase
 import com.skrpld.goalion.domain.usecases.CreateProfileUseCase
@@ -30,13 +31,16 @@ import com.skrpld.goalion.domain.usecases.DeleteUserUseCase
 import com.skrpld.goalion.domain.usecases.GetGoalsWithTasksUseCase
 import com.skrpld.goalion.domain.usecases.GetProfilesUseCases
 import com.skrpld.goalion.domain.usecases.GetUserUseCase
+import com.skrpld.goalion.domain.usecases.GoalInteractors
 import com.skrpld.goalion.domain.usecases.LogoutUseCase
+import com.skrpld.goalion.domain.usecases.ProfileInteractors
 import com.skrpld.goalion.domain.usecases.ReauthenticateAndSaveUseCase
 import com.skrpld.goalion.domain.usecases.SignInUseCase
 import com.skrpld.goalion.domain.usecases.SignUpUseCase
 import com.skrpld.goalion.domain.usecases.SyncGoalUseCase
 import com.skrpld.goalion.domain.usecases.SyncProfilesUseCase
 import com.skrpld.goalion.domain.usecases.SyncTaskUseCase
+import com.skrpld.goalion.domain.usecases.TaskInteractors
 import com.skrpld.goalion.domain.usecases.UpdateGoalDescriptionUseCase
 import com.skrpld.goalion.domain.usecases.UpdateGoalOrderUseCase
 import com.skrpld.goalion.domain.usecases.UpdateGoalPriorityUseCase
@@ -55,38 +59,47 @@ import com.skrpld.goalion.domain.usecases.UpdateTaskTargetDateUseCase
 import com.skrpld.goalion.domain.usecases.UpdateTaskTitleUseCase
 import com.skrpld.goalion.domain.usecases.UpdateTaskUseCase
 import com.skrpld.goalion.domain.usecases.UpdateUserUseCase
+import com.skrpld.goalion.domain.usecases.UserInteractors
 import com.skrpld.goalion.ui.screens.timeline.TimelineViewModel
+import com.skrpld.goalion.ui.screens.user.UserViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.dsl.worker
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val timelineModule = module {
-    viewModel {
-        TimelineViewModel(
-            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), // Goals
-            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()  // Tasks
-        )
-    }
+    viewModel { TimelineViewModel(get(), get(), get()) }
+    viewModel { UserViewModel() }
 }
 
 val domainModule = module {
+    // --- Interactors ---
+    factory { AuthInteractors(get(), get(), get(), get(), get()) }
+    factory { UserInteractors(get(), get(), get()) }
+    factory { ProfileInteractors(get(), get(), get(), get(), get()) }
+    factory { GoalInteractors(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    factory { TaskInteractors(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+
+    // --- Auth ---
     factory { SignUpUseCase(get(), get()) }
     factory { SignInUseCase(get()) }
     factory { LogoutUseCase(get()) }
     factory { ReauthenticateAndSaveUseCase(get()) }
     factory { ChangePasswordUseCase(get()) }
 
+    // --- User ---
     factory { GetUserUseCase(get(), get()) }
     factory { UpdateUserUseCase(get(), get()) }
     factory { DeleteUserUseCase(get()) }
 
+    // --- Profile ---
     factory { GetProfilesUseCases(get()) }
     factory { CreateProfileUseCase(get()) }
     factory { UpdateProfileUseCase(get()) }
     factory { DeleteProfileUseCase(get()) }
     factory { SyncProfilesUseCase(get()) }
 
+    // --- Goal ---
     factory { GetGoalsWithTasksUseCase(get()) }
     factory { CreateGoalUseCase(get()) }
     factory { UpdateGoalUseCase(get()) }
@@ -100,6 +113,7 @@ val domainModule = module {
     factory { UpdateGoalTargetDateUseCase(get()) }
     factory { SyncGoalUseCase(get()) }
 
+    // --- Task ---
     factory { CreateTaskUseCase(get()) }
     factory { UpdateTaskUseCase(get()) }
     factory { DeleteTaskUseCase(get()) }

@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.skrpld.goalion.ui.screens.timeline.TimelineScreen
+import com.skrpld.goalion.ui.navigation.AppNavigation
 import com.skrpld.goalion.ui.theme.GoalionTheme
 
 class MainActivity : ComponentActivity() {
@@ -13,7 +13,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             GoalionTheme {
-                TimelineScreen()
+                AppNavigation()
             }
         }
     }

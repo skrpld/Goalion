@@ -2,11 +2,6 @@ package com.skrpld.goalion.domain.model
 
 import com.android.identity.util.UUID
 
-enum class AuthState {
-    LoggedIn,
-    LoggedOut
-}
-
 /**
  * User entity.
  */

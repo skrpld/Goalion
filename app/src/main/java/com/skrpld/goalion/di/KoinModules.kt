@@ -2,6 +2,7 @@ package com.skrpld.goalion.di
 
 import androidx.room.Room
 import androidx.work.WorkManager
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.skrpld.goalion.data.sources.local.AppDatabase
 import com.skrpld.goalion.data.sources.remote.GoalRemoteDataSource
@@ -13,6 +14,7 @@ import com.skrpld.goalion.data.repositories.GoalRepositoryImpl
 import com.skrpld.goalion.data.repositories.ProfileRepositoryImpl
 import com.skrpld.goalion.data.repositories.TaskRepositoryImpl
 import com.skrpld.goalion.data.repositories.UserRepositoryImpl
+import com.skrpld.goalion.data.sources.remote.AuthRemoteDataSource
 import com.skrpld.goalion.data.workers.SyncWorker
 import com.skrpld.goalion.domain.repositories.AuthRepository
 import com.skrpld.goalion.domain.repositories.GoalRepository
@@ -68,7 +70,7 @@ import org.koin.dsl.module
 
 val timelineModule = module {
     viewModel { TimelineViewModel(get(), get(), get()) }
-    viewModel { UserViewModel() }
+    viewModel { UserViewModel(get(), get()) }
 }
 
 val domainModule = module {
@@ -132,7 +134,9 @@ val dataModule = module {
     single { get<AppDatabase>().goalDao() }
     single { get<AppDatabase>().taskDao() }
 
+    single { FirebaseAuth.getInstance() }
     single { FirebaseFirestore.getInstance() }
+    single { AuthRemoteDataSource(get()) }
     single { UserRemoteDataSource(get()) }
     single { ProfileRemoteDataSource(get()) }
     single { GoalRemoteDataSource(get()) }

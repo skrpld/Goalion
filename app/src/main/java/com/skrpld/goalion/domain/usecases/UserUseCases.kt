@@ -140,7 +140,11 @@ class GetUserUseCase(
 ) {
     suspend operator fun invoke(): User? {
         val userId = authRepository.getCurrentUser() ?: return null
-        return userRepository.getUser(userId)
+
+        val localUser = userRepository.getUser(userId)
+        if (localUser != null) return localUser
+
+        return userRepository.fetchUserFromRemote(userId)
     }
 }
 

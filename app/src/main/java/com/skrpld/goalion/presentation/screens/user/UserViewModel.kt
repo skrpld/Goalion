@@ -33,17 +33,14 @@ class UserViewModel(
     private val _state = MutableStateFlow(UserScreenState())
     val state: StateFlow<UserScreenState> = _state.asStateFlow()
 
-    // Поля ввода (храним в VM, чтобы переживали поворот экрана)
     var nameInput = MutableStateFlow("")
     var emailInput = MutableStateFlow("")
     var passwordInput = MutableStateFlow("")
 
-    // Поля для смены пароля
     var currentPassInput = MutableStateFlow("")
     var newPassInput = MutableStateFlow("")
     var confirmPassInput = MutableStateFlow("")
 
-    // Поля для создания профиля
     var newProfileTitleInput = MutableStateFlow("")
     var newProfileDescInput = MutableStateFlow("")
 
@@ -66,7 +63,6 @@ class UserViewModel(
     private suspend fun onUserLoggedIn(user: User) {
         _state.update { it.copy(user = user, isLoading = false, error = null) }
         loadProfiles(user.id)
-        // Предзаполняем поля редактирования
         nameInput.value = user.name
         emailInput.value = user.email
     }
@@ -80,11 +76,10 @@ class UserViewModel(
         }
     }
 
-    // --- Auth Logic ---
+    // --- Auth ---
 
     fun toggleAuthMode() {
         _state.update { it.copy(isLoginMode = !it.isLoginMode, error = null) }
-        // Очистка полей при переключении не обязательна, но желательна
     }
 
     fun submitAuth() {
@@ -103,7 +98,6 @@ class UserViewModel(
             result.fold(
                 onSuccess = { user ->
                     onUserLoggedIn(user)
-                    // Очищаем пароль после успешного входа
                     passwordInput.value = ""
                 },
                 onFailure = { error ->
@@ -116,15 +110,14 @@ class UserViewModel(
     fun logout() {
         viewModelScope.launch {
             userInteractors.logout()
-            _state.update { UserScreenState() } // Сброс состояния
-            // Очистка полей
+            _state.update { UserScreenState() }
             nameInput.value = ""
             emailInput.value = ""
             passwordInput.value = ""
         }
     }
 
-    // --- Profile & User Edit Logic ---
+    // --- Edit ---
 
     fun syncAll() {
         val user = _state.value.user ?: return
@@ -141,7 +134,6 @@ class UserViewModel(
         }
     }
 
-    // Управление диалогами
     fun showEditDialog() {
         val user = _state.value.user ?: return
         nameInput.value = user.name
@@ -169,7 +161,6 @@ class UserViewModel(
         viewModelScope.launch {
             try {
                 userInteractors.updateUser(user.id, nameInput.value, emailInput.value)
-                // Обновляем локального пользователя
                 val updatedUser = userInteractors.getUser()
                 if (updatedUser != null) {
                     _state.update { it.copy(user = updatedUser) }
@@ -191,7 +182,7 @@ class UserViewModel(
             result.fold(
                 onSuccess = {
                     hideChangePasswordDialog()
-                    _state.update { it.copy(error = "Password changed successfully") } // Можно использовать Toast в UI
+                    _state.update { it.copy(error = "Password changed successfully") }
                 },
                 onFailure = { e ->
                     _state.update { it.copy(error = e.message) }
@@ -200,15 +191,23 @@ class UserViewModel(
         }
     }
 
-    // Для создания профиля
-    fun showCreateProfile() { _state.update { it.copy(showCreateProfileDialog = true) } }
-    fun hideCreateProfile() { _state.update { it.copy(showCreateProfileDialog = false) } }
+    fun showCreateProfile() {
+        _state.update { it.copy(showCreateProfileDialog = true) }
+    }
+
+    fun hideCreateProfile() {
+        _state.update { it.copy(showCreateProfileDialog = false) }
+    }
 
     fun createProfile() {
         val user = _state.value.user ?: return
         viewModelScope.launch {
             try {
-                profileInteractors.create(user.id, newProfileTitleInput.value, newProfileDescInput.value)
+                profileInteractors.create(
+                    user.id,
+                    newProfileTitleInput.value,
+                    newProfileDescInput.value
+                )
                 loadProfiles(user.id)
                 hideCreateProfile()
                 newProfileTitleInput.value = ""

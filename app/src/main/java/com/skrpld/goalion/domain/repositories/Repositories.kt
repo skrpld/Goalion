@@ -29,6 +29,8 @@ interface UserRepository {
     suspend fun delete(userId: String)
     suspend fun isNameTaken(name: String): Boolean
     suspend fun isEmailTaken(email: String): Boolean
+
+    suspend fun fetchUserFromRemote(id: String): User?
 }
 
 /**

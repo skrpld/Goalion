@@ -176,6 +176,18 @@ class UserRepositoryImpl(
     override suspend fun isEmailTaken(email: String): Boolean {
         return userRemote.isEmailTaken(email)
     }
+
+    override suspend fun fetchUserFromRemote(id: String): User? {
+        return try {
+            val networkUser = userRemote.getUser(id)
+
+            networkUser?.toDomain()?.also { domainUser ->
+                userDao.upsert(domainUser.toEntity())
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
 }
 
 /**

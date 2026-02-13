@@ -7,7 +7,9 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.skrpld.goalion.domain.model.Goal
 import com.skrpld.goalion.domain.model.GoalWithTasks
+import com.skrpld.goalion.domain.model.Task
 import com.skrpld.goalion.domain.usecases.GoalInteractors
 import com.skrpld.goalion.domain.usecases.TaskInteractors
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,17 +18,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-data class TimelineUiState(
-    val goals: List<TimelineGoalItem> = emptyList(),
-    val isLoading: Boolean = false,
-    val errorMessage: String? = null
-)
-
-data class TimelineGoalItem(
-    val data: GoalWithTasks,
-    val isExpanded: Boolean = false
-)
 
 class TimelineViewModel(
     savedStateHandle: SavedStateHandle,
@@ -69,16 +60,94 @@ class TimelineViewModel(
             .launchIn(viewModelScope)
     }
 
-    private fun getGoalById(goalId: String) = _uiState.value.goals.find { it.data.goal.id == goalId }?.data?.goal
+    private fun getGoalById(goalId: String) =
+        _uiState.value.goals.find { it.data.goal.id == goalId }?.data?.goal
+
     private fun getTaskById(taskId: String) = _uiState.value.goals
         .flatMap { it.data.tasks }
         .find { it.id == taskId }
 
-// --- Domain: Goals ---
+// --- Dialog ---
+
+    fun openCreateGoalDialog() {
+        val now = System.currentTimeMillis()
+        _uiState.update { it.copy(dialogState = DialogState(
+            isOpen = true,
+            mode = EditMode.CREATE_GOAL,
+            initialStartDate = now,
+            initialTargetDate = now + MILLIS_IN_DAY * 7
+        )) }
+    }
+
+    fun openEditGoalDialog(goal: Goal) {
+        _uiState.update { it.copy(dialogState = DialogState(
+            isOpen = true,
+            mode = EditMode.EDIT_GOAL,
+            entityId = goal.id,
+            initialTitle = goal.title,
+            initialDescription = goal.description,
+            initialStartDate = goal.startDate,
+            initialTargetDate = goal.targetDate
+        )) }
+    }
+
+    fun openCreateTaskDialog(goalId: String) {
+        val now = System.currentTimeMillis()
+        _uiState.update { it.copy(dialogState = DialogState(
+            isOpen = true,
+            mode = EditMode.CREATE_TASK,
+            parentId = goalId,
+            initialStartDate = now,
+            initialTargetDate = now + MILLIS_IN_DAY * 3
+        )) }
+    }
+
+    fun openEditTaskDialog(task: Task) {
+        _uiState.update { it.copy(dialogState = DialogState(
+            isOpen = true,
+            mode = EditMode.EDIT_TASK,
+            entityId = task.id,
+            parentId = task.goalId,
+            initialTitle = task.title,
+            initialDescription = task.description,
+            initialStartDate = task.startDate,
+            initialTargetDate = task.targetDate
+        )) }
+    }
+
+    fun closeDialog() {
+        _uiState.update { it.copy(dialogState = it.dialogState.copy(isOpen = false)) }
+    }
+
+    fun onSaveDialog(title: String, description: String, start: Long, target: Long) {
+        val state = _uiState.value.dialogState
+        when (state.mode) {
+            EditMode.CREATE_GOAL -> manageGoal(title = title, description = description, startDate = start, targetDate = target)
+            EditMode.EDIT_GOAL -> manageGoal(id = state.entityId, title = title, description = description, startDate = start, targetDate = target)
+            EditMode.CREATE_TASK -> manageTask(goalId = state.parentId, title = title, description = description, startDate = start, targetDate = target)
+            EditMode.EDIT_TASK -> manageTask(id = state.entityId, goalId = state.parentId, title = title, description = description, startDate = start, targetDate = target)
+        }
+        closeDialog()
+    }
+
+    fun onDeleteFromDialog() {
+        val state = _uiState.value.dialogState
+        when (state.mode) {
+            EditMode.EDIT_GOAL -> state.entityId?.let { deleteGoal(it) }
+            EditMode.EDIT_TASK -> state.entityId?.let { deleteTask(it) }
+            else -> Unit
+        }
+        closeDialog()
+    }
+
+// --- Goals ---
 
     fun manageGoal(
         id: String? = null,
         title: String? = null,
+        description: String? = null,
+        startDate: Long? = null,
+        targetDate: Long? = null,
         status: Boolean? = null,
         isDelete: Boolean = false
     ) {
@@ -94,8 +163,12 @@ class TimelineViewModel(
                         id = java.util.UUID.randomUUID().toString(),
                         profileId = profileId,
                         title = title ?: "New Goal",
-                        description = "", status = false, priority = 0, order = 0,
-                        startDate = System.currentTimeMillis(), targetDate = 0
+                        description = description ?: "",
+                        status = false,
+                        priority = 0,
+                        order = 0,
+                        startDate = startDate ?: System.currentTimeMillis(),
+                        targetDate = targetDate ?: (System.currentTimeMillis() + MILLIS_IN_DAY * 7)
                     )
                 } else {
                     val goal = getGoalById(id) ?: return@launch
@@ -103,12 +176,12 @@ class TimelineViewModel(
                         id = goal.id,
                         profileId = goal.profileId,
                         title = title ?: goal.title,
-                        description = goal.description,
+                        description = description ?: goal.description,
                         status = status ?: goal.status,
                         priority = goal.priority,
                         order = goal.order,
-                        startDate = goal.startDate,
-                        targetDate = goal.targetDate
+                        startDate = startDate ?: goal.startDate,
+                        targetDate = targetDate ?: goal.targetDate
                     )
                 }
             } catch (e: Exception) {
@@ -121,12 +194,15 @@ class TimelineViewModel(
         viewModelScope.launch { goalInteractors.delete(goalId) }
     }
 
-// --- Domain: Tasks ---
+// --- Tasks ---
 
     fun manageTask(
         id: String? = null,
         goalId: String? = null,
         title: String? = null,
+        description: String? = null,
+        startDate: Long? = null,
+        targetDate: Long? = null,
         status: Boolean? = null,
         isDelete: Boolean = false
     ) {
@@ -142,23 +218,29 @@ class TimelineViewModel(
                         id = java.util.UUID.randomUUID().toString(),
                         goalId = goalId,
                         title = title ?: "New Task",
-                        description = "", status = false, priority = 0, order = 0,
-                        startDate = System.currentTimeMillis(), targetDate = 0
+                        description = description ?: "",
+                        status = false,
+                        priority = 0,
+                        order = 0,
+                        startDate = startDate ?: System.currentTimeMillis(),
+                        targetDate = targetDate ?: (System.currentTimeMillis() + MILLIS_IN_DAY * 3)
                     )
                     val index = _uiState.value.goals.indexOfFirst { it.data.goal.id == goalId }
-                    if (index != -1 && !_uiState.value.goals[index].isExpanded) toggleGoalExpansion(index)
+                    if (index != -1 && !_uiState.value.goals[index].isExpanded) {
+                        toggleGoalExpansion(index)
+                    }
                 } else if (id != null) {
                     val task = getTaskById(id) ?: return@launch
                     taskInteractors.update(
                         id = task.id,
                         goalId = task.goalId,
                         title = title ?: task.title,
-                        description = task.description,
+                        description = description ?: task.description,
                         status = status ?: task.status,
                         priority = task.priority,
                         order = task.order,
-                        startDate = task.startDate,
-                        targetDate = task.targetDate
+                        startDate = startDate ?: task.startDate,
+                        targetDate = targetDate ?: task.targetDate
                     )
                 }
             } catch (e: Exception) {

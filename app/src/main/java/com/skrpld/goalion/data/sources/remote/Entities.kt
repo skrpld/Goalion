@@ -1,4 +1,4 @@
-package com.skrpld.goalion.data.remote
+package com.skrpld.goalion.data.sources.remote
 
 import com.google.firebase.firestore.ServerTimestamp
 import java.util.Date

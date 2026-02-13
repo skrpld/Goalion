@@ -3,9 +3,13 @@ package com.skrpld.goalion.data.workers
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.skrpld.goalion.data.local.*
 import com.skrpld.goalion.data.mappers.*
-import com.skrpld.goalion.data.remote.*
+import com.skrpld.goalion.data.sources.local.GoalDao
+import com.skrpld.goalion.data.sources.local.ProfileDao
+import com.skrpld.goalion.data.sources.local.TaskDao
+import com.skrpld.goalion.data.sources.remote.GoalRemoteDataSource
+import com.skrpld.goalion.data.sources.remote.ProfileRemoteDataSource
+import com.skrpld.goalion.data.sources.remote.TaskRemoteDataSource
 import kotlinx.coroutines.coroutineScope
 import java.util.Date
 

@@ -1,7 +1,7 @@
 package com.skrpld.goalion.data.mappers
 
-import com.skrpld.goalion.domain.entities.GoalWithTasks
-import com.skrpld.goalion.data.local.GoalWithTasks as LocalGoalWithTasks
+import com.skrpld.goalion.domain.model.GoalWithTasks
+import com.skrpld.goalion.data.sources.local.GoalWithTasks as LocalGoalWithTasks
 
 /**
  * Converts a LocalGoalWithTasks object to a GoalWithTasks domain object.

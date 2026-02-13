@@ -38,46 +38,61 @@ android {
 }
 
 dependencies {
+    // --- Core Android & Lifecycle ---
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.identity.jvm)
+
+    // --- Jetpack Compose ---
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
-    implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.room.common.jvm)
-    implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.runtime)
-    implementation(libs.identity.jvm)
-    implementation(libs.androidx.work.runtime.ktx)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    debugImplementation(libs.androidx.compose.ui.tooling)
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
+    implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
+
+    // --- Database (Room) ---
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.room.common.jvm)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.compose.ui.unit)
+    implementation(libs.androidx.material3)
     ksp(libs.androidx.room.compiler)
+
+    // --- Dependency Injection (Koin) ---
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
-    implementation(libs.androidx.compose.foundation)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.accompanist.permissions)
     implementation(libs.koin.androidx.workmanager)
 
+    // --- Firebase & Backend ---
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth)
     implementation(libs.kotlinx.coroutines.play.services)
 
+    // --- Utilities ---
+    implementation(libs.accompanist.permissions)
+
+    // --- Unit Testing ---
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
     testImplementation(libs.androidx.core.testing)
+
+    // --- Instrumented Testing (Android UI) ---
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+
+    // --- Debug Tools ---
+    debugImplementation(libs.androidx.compose.ui.tooling)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

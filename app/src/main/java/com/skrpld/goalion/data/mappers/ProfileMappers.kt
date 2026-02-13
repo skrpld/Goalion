@@ -1,8 +1,8 @@
 package com.skrpld.goalion.data.mappers
 
-import com.skrpld.goalion.data.local.*
-import com.skrpld.goalion.data.remote.*
-import com.skrpld.goalion.domain.entities.Profile
+import com.skrpld.goalion.data.sources.local.ProfileEntity
+import com.skrpld.goalion.data.sources.remote.NetworkProfile
+import com.skrpld.goalion.domain.model.Profile
 
 // --- Entity-Domain ---
 
@@ -26,15 +26,16 @@ fun ProfileEntity.toDomain(): Profile = Profile(
  * @param isDeleted Flag indicating whether the entity is marked for deletion
  * @return A ProfileEntity with the same properties as the domain object
  */
-fun Profile.toEntity(isSynced: Boolean = false, isDeleted: Boolean = false): ProfileEntity = ProfileEntity(
-    id = id,
-    userId = userId,
-    title = title,
-    description = description,
-    updatedAt = updatedAt,
-    isSynced = isSynced,
-    isDeleted = isDeleted
-)
+fun Profile.toEntity(isSynced: Boolean = false, isDeleted: Boolean = false): ProfileEntity =
+    ProfileEntity(
+        id = id,
+        userId = userId,
+        title = title,
+        description = description,
+        updatedAt = updatedAt,
+        isSynced = isSynced,
+        isDeleted = isDeleted
+    )
 
 /**
  * Converts a list of ProfileEntity objects to a list of Profile domain objects.

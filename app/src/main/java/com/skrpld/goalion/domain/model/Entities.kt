@@ -1,14 +1,6 @@
-package com.skrpld.goalion.domain.entities
+package com.skrpld.goalion.domain.model
 
 import com.android.identity.util.UUID
-
-/**
- * Goal with associated tasks.
- */
-data class GoalWithTasks(
-    val goal: Goal,
-    val tasks: List<Task>
-)
 
 /**
  * User entity.
@@ -29,6 +21,14 @@ data class Profile(
     val title: String,
     val description: String,
     val updatedAt: Long = System.currentTimeMillis()
+)
+
+/**
+ * Goal with associated tasks.
+ */
+data class GoalWithTasks(
+    val goal: Goal,
+    val tasks: List<Task>
 )
 
 /**

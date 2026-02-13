@@ -1,10 +1,10 @@
 package com.skrpld.goalion.domain.repositories
 
-import com.skrpld.goalion.domain.entities.Goal
-import com.skrpld.goalion.domain.entities.GoalWithTasks
-import com.skrpld.goalion.domain.entities.Profile
-import com.skrpld.goalion.domain.entities.Task
-import com.skrpld.goalion.domain.entities.User
+import com.skrpld.goalion.domain.model.Goal
+import com.skrpld.goalion.domain.model.GoalWithTasks
+import com.skrpld.goalion.domain.model.Profile
+import com.skrpld.goalion.domain.model.Task
+import com.skrpld.goalion.domain.model.User
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -29,6 +29,8 @@ interface UserRepository {
     suspend fun delete(userId: String)
     suspend fun isNameTaken(name: String): Boolean
     suspend fun isEmailTaken(email: String): Boolean
+
+    suspend fun fetchUserFromRemote(id: String): User?
 }
 
 /**

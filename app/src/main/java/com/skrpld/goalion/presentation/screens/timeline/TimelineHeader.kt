@@ -1,6 +1,5 @@
-package com.skrpld.goalion.ui.screens.timeline
+package com.skrpld.goalion.presentation.screens.timeline
 
-import android.R.attr.shadowColor
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
@@ -14,7 +13,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import com.skrpld.goalion.ui.theme.outlineVariant
 import java.util.*
 import kotlin.math.ceil
 import kotlin.math.floor

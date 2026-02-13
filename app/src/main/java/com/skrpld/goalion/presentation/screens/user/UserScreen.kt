@@ -1,4 +1,4 @@
-package com.skrpld.goalion.ui.screens.user
+package com.skrpld.goalion.presentation.screens.user
 
 import androidx.compose.runtime.Composable
 import org.koin.androidx.compose.koinViewModel

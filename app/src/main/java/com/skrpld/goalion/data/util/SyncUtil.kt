@@ -6,9 +6,9 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import com.skrpld.goalion.data.local.GoalDao
-import com.skrpld.goalion.data.local.ProfileDao
-import com.skrpld.goalion.data.local.TaskDao
+import com.skrpld.goalion.data.sources.local.GoalDao
+import com.skrpld.goalion.data.sources.local.ProfileDao
+import com.skrpld.goalion.data.sources.local.TaskDao
 import com.skrpld.goalion.data.workers.SyncWorker
 
 /**

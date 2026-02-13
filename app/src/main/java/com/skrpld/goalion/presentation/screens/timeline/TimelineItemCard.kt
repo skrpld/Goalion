@@ -1,4 +1,4 @@
-package com.skrpld.goalion.ui.screens.timeline
+package com.skrpld.goalion.presentation.screens.timeline
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

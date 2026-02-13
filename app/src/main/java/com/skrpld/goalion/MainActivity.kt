@@ -4,8 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.skrpld.goalion.ui.navigation.AppNavigation
-import com.skrpld.goalion.ui.theme.GoalionTheme
+import com.skrpld.goalion.presentation.navigation.AppNavigation
+import com.skrpld.goalion.presentation.theme.GoalionTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -1,4 +1,4 @@
-package com.skrpld.goalion.ui.navigation
+package com.skrpld.goalion.presentation.navigation
 
 sealed class Screens(val route: String) {
     object Splash : Screens("splash")

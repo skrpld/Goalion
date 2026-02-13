@@ -1,4 +1,4 @@
-package com.skrpld.goalion.ui.screens.timeline
+package com.skrpld.goalion.presentation.screens.timeline
 
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.runtime.getValue
@@ -7,7 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.skrpld.goalion.domain.entities.GoalWithTasks
+import com.skrpld.goalion.domain.model.GoalWithTasks
 import com.skrpld.goalion.domain.usecases.GoalInteractors
 import com.skrpld.goalion.domain.usecases.TaskInteractors
 import kotlinx.coroutines.flow.MutableStateFlow

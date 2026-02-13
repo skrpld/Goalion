@@ -3,11 +3,11 @@ package com.skrpld.goalion.di
 import androidx.room.Room
 import androidx.work.WorkManager
 import com.google.firebase.firestore.FirebaseFirestore
-import com.skrpld.goalion.data.local.AppDatabase
-import com.skrpld.goalion.data.remote.GoalRemoteDataSource
-import com.skrpld.goalion.data.remote.ProfileRemoteDataSource
-import com.skrpld.goalion.data.remote.TaskRemoteDataSource
-import com.skrpld.goalion.data.remote.UserRemoteDataSource
+import com.skrpld.goalion.data.sources.local.AppDatabase
+import com.skrpld.goalion.data.sources.remote.GoalRemoteDataSource
+import com.skrpld.goalion.data.sources.remote.ProfileRemoteDataSource
+import com.skrpld.goalion.data.sources.remote.TaskRemoteDataSource
+import com.skrpld.goalion.data.sources.remote.UserRemoteDataSource
 import com.skrpld.goalion.data.repositories.AuthRepositoryImpl
 import com.skrpld.goalion.data.repositories.GoalRepositoryImpl
 import com.skrpld.goalion.data.repositories.ProfileRepositoryImpl
@@ -19,7 +19,6 @@ import com.skrpld.goalion.domain.repositories.GoalRepository
 import com.skrpld.goalion.domain.repositories.ProfileRepository
 import com.skrpld.goalion.domain.repositories.TaskRepository
 import com.skrpld.goalion.domain.repositories.UserRepository
-import com.skrpld.goalion.domain.usecases.AuthInteractors
 import com.skrpld.goalion.domain.usecases.ChangePasswordUseCase
 import com.skrpld.goalion.domain.usecases.CreateGoalUseCase
 import com.skrpld.goalion.domain.usecases.CreateProfileUseCase
@@ -60,8 +59,8 @@ import com.skrpld.goalion.domain.usecases.UpdateTaskTitleUseCase
 import com.skrpld.goalion.domain.usecases.UpdateTaskUseCase
 import com.skrpld.goalion.domain.usecases.UpdateUserUseCase
 import com.skrpld.goalion.domain.usecases.UserInteractors
-import com.skrpld.goalion.ui.screens.timeline.TimelineViewModel
-import com.skrpld.goalion.ui.screens.user.UserViewModel
+import com.skrpld.goalion.presentation.screens.timeline.TimelineViewModel
+import com.skrpld.goalion.presentation.screens.user.UserViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.dsl.worker
 import org.koin.core.module.dsl.viewModel
@@ -74,8 +73,7 @@ val timelineModule = module {
 
 val domainModule = module {
     // --- Interactors ---
-    factory { AuthInteractors(get(), get(), get(), get(), get()) }
-    factory { UserInteractors(get(), get(), get()) }
+    factory { UserInteractors(get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { ProfileInteractors(get(), get(), get(), get(), get()) }
     factory { GoalInteractors(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     factory { TaskInteractors(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }

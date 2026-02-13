@@ -1,4 +1,4 @@
-package com.skrpld.goalion.data.remote
+package com.skrpld.goalion.data.sources.remote
 
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
@@ -6,6 +6,7 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
+import java.util.Date
 
 /**
  * Remote data source for authentication-related operations using Firebase Authentication.
@@ -248,7 +249,7 @@ class GoalRemoteDataSource constructor(
      * @param lastUpdate The date to compare against
      * @return A list of NetworkGoal objects that have been updated after the specified date
      */
-    suspend fun getGoalsUpdatedAfter(profileId: String, lastUpdate: java.util.Date): List<NetworkGoal> {
+    suspend fun getGoalsUpdatedAfter(profileId: String, lastUpdate: Date): List<NetworkGoal> {
         return firestore.collection("goals")
             .whereEqualTo("profileId", profileId)
             .whereGreaterThan("updatedAt", lastUpdate)
@@ -293,7 +294,7 @@ class TaskRemoteDataSource constructor(
      * @param lastUpdate The date to compare against
      * @return A list of NetworkTask objects that have been updated after the specified date
      */
-    suspend fun getTasksUpdatedAfter(goalId: String, lastUpdate: java.util.Date): List<NetworkTask> {
+    suspend fun getTasksUpdatedAfter(goalId: String, lastUpdate: Date): List<NetworkTask> {
         return firestore.collection("tasks")
             .whereEqualTo("goalId", goalId)
             .whereGreaterThan("updatedAt", lastUpdate)

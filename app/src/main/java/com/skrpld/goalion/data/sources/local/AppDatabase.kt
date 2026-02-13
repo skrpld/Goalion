@@ -1,8 +1,7 @@
-package com.skrpld.goalion.data.local
+package com.skrpld.goalion.data.sources.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
 
 @Database(
     entities = [UserEntity::class, ProfileEntity::class, GoalEntity::class, TaskEntity::class],

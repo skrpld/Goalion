@@ -1,8 +1,8 @@
 package com.skrpld.goalion.data.mappers
 
-import com.skrpld.goalion.data.local.*
-import com.skrpld.goalion.data.remote.*
-import com.skrpld.goalion.domain.entities.User
+import com.skrpld.goalion.data.sources.local.UserEntity
+import com.skrpld.goalion.data.sources.remote.NetworkUser
+import com.skrpld.goalion.domain.model.User
 
 // --- Entity-Domain ---
 

@@ -1,4 +1,4 @@
-package com.skrpld.goalion.data.local
+package com.skrpld.goalion.data.sources.local
 
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow

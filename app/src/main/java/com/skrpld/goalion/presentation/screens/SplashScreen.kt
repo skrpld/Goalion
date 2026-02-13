@@ -1,4 +1,4 @@
-package com.skrpld.goalion.ui.screens
+package com.skrpld.goalion.presentation.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

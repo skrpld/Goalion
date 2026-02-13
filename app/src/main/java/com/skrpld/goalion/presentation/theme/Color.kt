@@ -1,4 +1,4 @@
-package com.skrpld.goalion.ui.theme
+package com.skrpld.goalion.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 

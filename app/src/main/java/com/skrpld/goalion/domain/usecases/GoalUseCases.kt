@@ -1,7 +1,7 @@
 package com.skrpld.goalion.domain.usecases
 
-import com.skrpld.goalion.domain.entities.Goal
-import com.skrpld.goalion.domain.entities.GoalWithTasks
+import com.skrpld.goalion.domain.model.Goal
+import com.skrpld.goalion.domain.model.GoalWithTasks
 import com.skrpld.goalion.domain.repositories.GoalRepository
 import kotlinx.coroutines.flow.Flow
 

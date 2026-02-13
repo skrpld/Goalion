@@ -1,6 +1,6 @@
 package com.skrpld.goalion.domain.usecases
 
-import com.skrpld.goalion.domain.entities.Task
+import com.skrpld.goalion.domain.model.Task
 import com.skrpld.goalion.domain.repositories.TaskRepository
 
 data class TaskInteractors(

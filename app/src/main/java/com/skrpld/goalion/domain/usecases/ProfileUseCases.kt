@@ -1,6 +1,6 @@
 package com.skrpld.goalion.domain.usecases
 
-import com.skrpld.goalion.domain.entities.Profile
+import com.skrpld.goalion.domain.model.Profile
 import com.skrpld.goalion.domain.repositories.ProfileRepository
 
 data class ProfileInteractors(

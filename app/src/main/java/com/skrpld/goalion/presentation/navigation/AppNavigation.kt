@@ -1,4 +1,4 @@
-package com.skrpld.goalion.ui.navigation
+package com.skrpld.goalion.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -6,12 +6,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.skrpld.goalion.domain.entities.AuthState
-import com.skrpld.goalion.ui.screens.SplashScreen
-import com.skrpld.goalion.ui.screens.timeline.TimelineScreen
-import com.skrpld.goalion.ui.screens.timeline.TimelineViewModel
-import com.skrpld.goalion.ui.screens.user.UserScreen
-import com.skrpld.goalion.ui.screens.user.UserViewModel
+import com.skrpld.goalion.domain.model.AuthState
+import com.skrpld.goalion.presentation.screens.SplashScreen
+import com.skrpld.goalion.presentation.screens.timeline.TimelineScreen
+import com.skrpld.goalion.presentation.screens.timeline.TimelineViewModel
+import com.skrpld.goalion.presentation.screens.user.UserScreen
+import com.skrpld.goalion.presentation.screens.user.UserViewModel
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 

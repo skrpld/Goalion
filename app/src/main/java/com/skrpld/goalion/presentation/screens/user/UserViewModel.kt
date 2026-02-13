@@ -1,7 +1,7 @@
-package com.skrpld.goalion.ui.screens.user
+package com.skrpld.goalion.presentation.screens.user
 
 import androidx.lifecycle.ViewModel
-import com.skrpld.goalion.domain.entities.AuthState
+import com.skrpld.goalion.domain.model.AuthState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 

@@ -1,4 +1,4 @@
-package com.skrpld.goalion.domain.entities
+package com.skrpld.goalion.domain.model
 
 import com.android.identity.util.UUID
 

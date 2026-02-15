@@ -16,6 +16,11 @@ enum class ZoomLevel {
     NORMAL, DETAILED
 }
 
+sealed class CardViewState {
+    object Full : CardViewState()
+    data class Marker(val stickToLeft: Boolean) : CardViewState()
+}
+
 enum class Priority(val value: Int, val color: Color) {
     HIGH(0, Color(0xFFE53935)),
     NORMAL(1, Color(0xFFFFB300)),

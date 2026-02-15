@@ -1,5 +1,6 @@
 package com.skrpld.goalion.presentation.screens.timeline
 
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -30,18 +31,51 @@ fun TimelineScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val density = LocalDensity.current
-    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+    val configuration = LocalConfiguration.current
+    val screenWidth = configuration.screenWidthDp.dp
+    val screenWidthPx = with(density) { screenWidth.toPx() }
+    val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
 
     val currentDayWidth = if (uiState.zoomLevel == ZoomLevel.NORMAL) DAY_WIDTH_NORMAL else DAY_WIDTH_ZOOMED
     val dayWidthPx = with(density) { currentDayWidth.toPx() }
+    val baseTime = getBaseTime()
+
+    val (minScrollX, maxScrollX) = remember(uiState.goals, dayWidthPx, screenWidthPx) {
+        if (uiState.goals.isEmpty()) return@remember 0f to 0f
+
+        val minTime = uiState.goals.minOf { it.data.goal.startDate }
+        val maxTime = uiState.goals.maxOf { it.data.goal.targetDate }
+
+        val paddingPx = 7 * dayWidthPx
+        val startX = ((minTime - baseTime).toFloat() / MILLIS_IN_DAY * dayWidthPx) - paddingPx
+        val endX = ((maxTime - baseTime).toFloat() / MILLIS_IN_DAY * dayWidthPx) + paddingPx
+
+        startX to (endX - screenWidthPx).coerceAtLeast(startX)
+    }
+
+    var maxScrollY by remember { mutableStateOf(0f) }
+
+    val onBoundScroll: (Float, Orientation) -> Unit = { delta, orientation ->
+        if (orientation == Orientation.Horizontal) {
+            val newX = (viewModel.scrollOffsetX - delta).coerceIn(minScrollX, maxScrollX)
+            viewModel.setScroll(newX, viewModel.scrollOffsetY)
+        } else {
+            val limitY = (maxScrollY - screenHeightPx + 200f).coerceAtLeast(0f)
+            val newY = (viewModel.scrollOffsetY - delta).coerceIn(0f, limitY)
+            viewModel.setScroll(viewModel.scrollOffsetX, newY)
+        }
+    }
+
+    val jumpToDate: (Long) -> Unit = { dateMillis ->
+        val daysFromBase = (dateMillis - baseTime).toFloat() / MILLIS_IN_DAY
+        val targetX = (daysFromBase * dayWidthPx) - (screenWidthPx / 2)
+        viewModel.setScroll(targetX.coerceIn(minScrollX, maxScrollX), viewModel.scrollOffsetY)
+    }
 
     LaunchedEffect(uiState.scrollRequest) {
         uiState.scrollRequest?.let {
-            val baseTime = getBaseTime()
-            val daysFromBase = (System.currentTimeMillis() - baseTime).toFloat() / MILLIS_IN_DAY
-            val screenCenter = with(density) { screenWidth.toPx() / 2 }
-            val newX = (daysFromBase * dayWidthPx) - screenCenter + (dayWidthPx / 2)
-            viewModel.setScroll(newX, viewModel.scrollOffsetY)
+            val now = System.currentTimeMillis()
+            jumpToDate(now)
             viewModel.consumeScrollRequest()
         }
     }
@@ -57,7 +91,10 @@ fun TimelineScreen(
 
     Scaffold(
         floatingActionButton = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 SmallFloatingActionButton(
                     onClick = viewModel::toggleShowCompleted,
                     containerColor = MaterialTheme.colorScheme.secondaryContainer
@@ -91,7 +128,8 @@ fun TimelineScreen(
             TimelineHeader(
                 scrollOffsetX = viewModel.scrollOffsetX,
                 zoomLevel = uiState.zoomLevel,
-                dayWidth = currentDayWidth
+                dayWidth = currentDayWidth,
+                baseTime = baseTime
             )
 
             TimelineContent(
@@ -100,14 +138,21 @@ fun TimelineScreen(
                 scrollOffsetY = viewModel.scrollOffsetY,
                 zoomLevel = uiState.zoomLevel,
                 dayWidth = currentDayWidth,
-                onScroll = viewModel::onScroll,
+                screenWidthPx = screenWidthPx,
+                baseTime = baseTime,
+                onContentHeightChanged = { height -> maxScrollY = height },
+                onScroll = onBoundScroll,
                 onToggleExpand = viewModel::toggleGoalExpansion,
                 onEditGoal = viewModel::openEditGoalDialog,
                 onAddTask = viewModel::openCreateTaskDialog,
                 onEditTask = viewModel::openEditTaskDialog,
                 onViewTask = viewModel::openViewTask,
                 onToggleGoalStatus = viewModel::toggleGoalStatus,
-                onToggleTaskStatus = viewModel::toggleTaskStatus
+                onToggleTaskStatus = viewModel::toggleTaskStatus,
+                onJump = { x ->
+                    val centered = x - (screenWidthPx / 2)
+                    viewModel.setScroll(centered.coerceIn(minScrollX, maxScrollX), viewModel.scrollOffsetY)
+                }
             )
         }
     }

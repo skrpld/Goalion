@@ -5,6 +5,7 @@ import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.skrpld.goalion.data.sources.local.GoalDao
@@ -94,12 +95,19 @@ class SyncUtil(
      * @param userId The unique identifier of the user to sync
      */
     private fun enqueueWorker(userId: String) {
-        val constraints = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
+        Log.d(TAG, "Configuring WorkRequest for User: $userId")
+
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
         val request = OneTimeWorkRequestBuilder<SyncWorker>()
             .setInputData(workDataOf("USER_ID" to userId))
             .setConstraints(constraints)
+            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .build()
-        
+
+        Log.d(TAG, "Enqueuing Unique Work: sync_user_$userId")
         workManager.enqueueUniqueWork(
             "sync_user_$userId",
             ExistingWorkPolicy.REPLACE,

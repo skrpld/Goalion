@@ -65,6 +65,7 @@ import com.skrpld.goalion.presentation.screens.timeline.TimelineViewModel
 import com.skrpld.goalion.presentation.screens.user.UserViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.dsl.worker
+import org.koin.androidx.workmanager.dsl.workerOf
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
@@ -143,7 +144,7 @@ val dataModule = module {
     single { TaskRemoteDataSource(get()) }
 
     single { WorkManager.getInstance(androidContext()) }
-    worker { SyncWorker(get(), get(), get(), get(), get(), get(), get(), get()) }
+    workerOf(::SyncWorker)
 
     single<AuthRepository> { AuthRepositoryImpl(get(), get(), get(), get()) }
     single<UserRepository> { UserRepositoryImpl(get(), get()) }

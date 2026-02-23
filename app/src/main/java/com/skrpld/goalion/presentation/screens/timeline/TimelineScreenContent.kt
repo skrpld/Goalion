@@ -1,19 +1,20 @@
 package com.skrpld.goalion.presentation.screens.timeline
 
 import android.text.format.DateUtils
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.draggable
-import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.layout.LazyLayout
+import androidx.compose.foundation.lazy.layout.LazyLayoutItemProvider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.drawText
@@ -173,6 +174,7 @@ fun TimelineHeader(
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TimelineContent(
     goals: List<TimelineGoalItem>,
@@ -188,116 +190,92 @@ fun TimelineContent(
     onEditGoal: (Goal) -> Unit,
     onAddTask: (String) -> Unit,
     onEditTask: (Task) -> Unit,
+    onViewTask: (Task) -> Unit,
     onToggleGoalStatus: (Goal) -> Unit,
     onToggleTaskStatus: (Task) -> Unit,
-    onViewTask: (Task) -> Unit,
     onJump: (Float) -> Unit
 ) {
     val density = LocalDensity.current
     val dayWidthPx = with(density) { dayWidth.toPx() }
+    val itemHeightPx = with(density) { 70.dp.toPx() }
+    val spacingPx = with(density) { 8.dp.toPx() }
 
-    Box(
+    LaunchedEffect(goals.size) {
+        val totalH = goals.size * (itemHeightPx + spacingPx)
+        onContentHeightChanged(totalH)
+    }
+
+    val itemProvider = remember(goals, scrollOffsetX, screenWidthPx) {
+        object : LazyLayoutItemProvider {
+            override val itemCount: Int = goals.size
+
+            @Composable
+            override fun Item(index: Int, key: Any) {
+                val item = goals[index]
+                val startX = ((item.data.goal.startDate - baseTime) / MILLIS_IN_DAY.toFloat()) * dayWidthPx
+                val endX = ((item.data.goal.targetDate - baseTime) / MILLIS_IN_DAY.toFloat()) * dayWidthPx
+                val widthPx = maxOf(endX - startX, with(density) { 40.dp.toPx() })
+
+                TimelineGoalCard(
+                    item = item,
+                    initialWidth = with(density) { widthPx.toDp() },
+                    totalWidthPx = widthPx,
+                    absoluteX = startX,
+                    scrollOffsetX = scrollOffsetX,
+                    screenWidthPx = screenWidthPx,
+                    onClick = { onToggleExpand(index) },
+                    onEditGoal = { onEditGoal(item.data.goal) },
+                    onAddTask = { onAddTask(item.data.goal.id) },
+                    onEditTask = onEditTask,
+                    onToggleStatus = { onToggleGoalStatus(item.data.goal) },
+                    onToggleTaskStatus = onToggleTaskStatus,
+                    onViewTask = onViewTask,
+                    onJump = onJump
+                )
+            }
+        }
+    }
+
+    LazyLayout(
+        itemProvider = { itemProvider },
         modifier = Modifier
             .fillMaxSize()
-            .clipToBounds()
-            .drawBehind {
-                val screenWidth = size.width
-                val screenHeight = size.height
-
-                val firstDay = floor(scrollOffsetX / dayWidthPx).toInt()
-                val count = ceil(screenWidth / dayWidthPx).toInt() + 1
-
-                for (i in 0..count) {
-                    val x = ((firstDay + i) * dayWidthPx) - scrollOffsetX
-                    drawLine(
-                        Color.Gray.copy(alpha = 0.1f),
-                        Offset(x, 0f),
-                        Offset(x, screenHeight)
-                    )
-                }
-
-                val now = System.currentTimeMillis()
-                val daysFromBase = (now - baseTime).toFloat() / MILLIS_IN_DAY
-                val currentX = (daysFromBase * dayWidthPx) - scrollOffsetX
-                if (currentX in -10f..screenWidth + 10f) {
-                    drawLine(Color.Green, Offset(currentX, 0f), Offset(currentX, screenHeight), strokeWidth = 2.dp.toPx())
+            .pointerInput(Unit) {
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    onScroll(dragAmount.x, Orientation.Horizontal)
+                    onScroll(dragAmount.y, Orientation.Vertical)
                 }
             }
-            .draggable(
-                state = rememberDraggableState { delta -> onScroll(delta, Orientation.Horizontal) },
-                orientation = Orientation.Horizontal
-            )
-            .draggable(
-                state = rememberDraggableState { delta -> onScroll(delta, Orientation.Vertical) },
-                orientation = Orientation.Vertical
-            )
-    ) {
-        Layout(
-            content = {
-                goals.forEachIndexed { index, item ->
-                    val durationMs = item.data.goal.targetDate - item.data.goal.startDate
-                    val durationDays = max(1f, durationMs.toFloat() / MILLIS_IN_DAY)
-                    val widthDp = (durationDays * dayWidth.value).dp.coerceAtLeast(50.dp)
-                    val widthPx = with(density) { widthDp.toPx() }
+    ) { constraints ->
+        val placeables = mutableListOf<Pair<Placeable, IntOffset>>()
+        var currentY = -scrollOffsetY
 
-                    val startOffsetMs = item.data.goal.startDate - baseTime
-                    val absoluteX = (startOffsetMs.toFloat() / MILLIS_IN_DAY) * dayWidthPx
+        for (i in 0 until itemProvider.itemCount) {
+            val item = goals[i]
+            val startPx = ((item.data.goal.startDate - baseTime) / MILLIS_IN_DAY.toFloat()) * dayWidthPx
+            val endPx = ((item.data.goal.targetDate - baseTime) / MILLIS_IN_DAY.toFloat()) * dayWidthPx
+            val widthPx = maxOf(endPx - startPx, density.run { 40.dp.toPx() })
 
-                    TimelineGoalCard(
-                        item = item,
-                        initialWidth = widthDp,
-                        totalWidthPx = widthPx,
-                        absoluteX = absoluteX,
-                        scrollOffsetX = scrollOffsetX,
-                        screenWidthPx = screenWidthPx,
-                        onClick = { onToggleExpand(index) },
-                        onEditGoal = { onEditGoal(item.data.goal) },
-                        onAddTask = { onAddTask(item.data.goal.id) },
-                        onEditTask = onEditTask,
-                        onToggleStatus = { onToggleGoalStatus(item.data.goal) },
-                        onToggleTaskStatus = onToggleTaskStatus,
-                        onViewTask = onViewTask,
-                        onJump = onJump
-                    )
+            if (currentY + itemHeightPx > 0 && currentY < constraints.maxHeight) {
+                val measurables = measure(i, Constraints.fixedWidth(widthPx.roundToInt()))
+                val placeable = measurables.firstOrNull()
+
+                if (placeable != null) {
+                    val screenX = (startPx - scrollOffsetX).roundToInt()
+                    placeables.add(placeable to IntOffset(screenX, currentY.roundToInt()))
+                    currentY += placeable.height + spacingPx
+                } else {
+                    currentY += itemHeightPx + spacingPx
                 }
+            } else {
+                currentY += itemHeightPx + spacingPx
             }
-        ) { measurables, constraints ->
-            val placeables = mutableListOf<Placeable>()
-            val positions = mutableListOf<IntOffset>()
+        }
 
-            var currentY = 24.dp.roundToPx()
-            val paddingY = 12.dp.roundToPx()
-
-            measurables.forEachIndexed { index, measurable ->
-                val item = goals[index]
-                val startOffsetMs = item.data.goal.startDate - baseTime
-                val xPosition = (startOffsetMs.toFloat() / MILLIS_IN_DAY * dayWidthPx).roundToInt()
-
-                val placeable = measurable.measure(Constraints())
-
-                placeables.add(placeable)
-                positions.add(IntOffset(xPosition, currentY))
-
-                currentY += placeable.height + paddingY
-            }
-
-            onContentHeightChanged(currentY.toFloat())
-
-            layout(constraints.maxWidth, constraints.maxHeight) {
-                val scrollXInt = scrollOffsetX.roundToInt()
-                val scrollYInt = scrollOffsetY.roundToInt()
-
-                placeables.forEachIndexed { index, placeable ->
-                    val pos = positions[index]
-                    val finalY = pos.y - scrollYInt
-
-                    if (finalY + placeable.height > 0 && finalY < constraints.maxHeight) {
-                        placeable.place(
-                            x = pos.x - scrollXInt,
-                            y = finalY
-                        )
-                    }
-                }
+        layout(constraints.maxWidth, constraints.maxHeight) {
+            placeables.forEach { (placeable, offset) ->
+                placeable.placeRelative(offset)
             }
         }
     }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -41,12 +42,14 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.skrpld.goalion.domain.model.Task
@@ -72,19 +75,18 @@ fun TimelineGoalCard(
     onViewTask: (Task) -> Unit,
     onJump: (Float) -> Unit
 ) {
+    val density = LocalDensity.current
+
     val viewState by remember(absoluteX, totalWidthPx, screenWidthPx, scrollOffsetX) {
         derivedStateOf {
             val screenStart = scrollOffsetX
             val screenEnd = scrollOffsetX + screenWidthPx
             val itemEnd = absoluteX + totalWidthPx
 
-            val visibleStart = max(absoluteX, screenStart)
-            val visibleEnd = min(itemEnd, screenEnd)
-            val visibleWidth = visibleEnd - visibleStart
-
-            if (visibleWidth > 0 && visibleWidth < 160f) {
-                val stickToLeft = absoluteX < screenStart
-                CardViewState.Marker(stickToLeft)
+            if (itemEnd < screenStart + 80f) {
+                CardViewState.Marker(stickToLeft = true)
+            } else if (absoluteX > screenEnd - 80f) {
+                CardViewState.Marker(stickToLeft = false)
             } else {
                 CardViewState.Full
             }
@@ -92,7 +94,6 @@ fun TimelineGoalCard(
     }
 
     val priorityColor = Priority.fromInt(item.data.goal.priority).color
-    val density = LocalDensity.current
 
     when (val state = viewState) {
         is CardViewState.Marker -> {
@@ -100,8 +101,6 @@ fun TimelineGoalCard(
                 modifier = Modifier
                     .layout { measurable, constraints ->
                         val placeable = measurable.measure(constraints)
-
-                        val parentX = absoluteX - scrollOffsetX
                         val offsetX = if (state.stickToLeft) {
                             (scrollOffsetX - absoluteX).coerceAtLeast(0f)
                         } else {
@@ -130,90 +129,101 @@ fun TimelineGoalCard(
             }
         }
         CardViewState.Full -> {
-
             var showMenu by remember { mutableStateOf(false) }
+            var pressOffset by remember { mutableStateOf(DpOffset.Zero) }
+
             val containerColor = if(item.data.goal.status) Color.Gray.copy(alpha=0.2f) else MaterialTheme.colorScheme.primaryContainer
             val contentColor = if(item.data.goal.status) Color.Gray else MaterialTheme.colorScheme.onPrimaryContainer
 
-            Layout(
-                content = {
-                    Column(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(containerColor)
-                            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
-                            .combinedClickable(
-                                onClick = onClick,
-                                onLongClick = { showMenu = true }
-                            )
-                            .drawBehind {
-                                drawRect(priorityColor, Offset.Zero, Size(10.dp.toPx(), size.height))
-                            }
-                            .padding(start = 14.dp, top = 8.dp, end = 8.dp, bottom = 8.dp)
-                    ) {
-                        Text(
-                            text = item.data.goal.title,
-                            style = MaterialTheme.typography.titleSmall,
-                            color = contentColor,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        if (item.data.goal.description.isNotEmpty()) {
+            Box {
+                Layout(
+                    content = {
+                        Column(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(containerColor)
+                                .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                                .pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onLongPress = { offset ->
+                                            pressOffset = DpOffset(offset.x.toDp(), offset.y.toDp())
+                                            showMenu = true
+                                        },
+                                        onTap = { onClick() }
+                                    )
+                                }
+                                .drawBehind {
+                                    drawRect(priorityColor, Offset.Zero, Size(10.dp.toPx(), size.height))
+                                }
+                                .padding(start = 14.dp, top = 8.dp, end = 8.dp, bottom = 8.dp)
+                        ) {
                             Text(
-                                text = item.data.goal.description,
-                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
-                                color = contentColor.copy(alpha = 0.8f),
+                                text = item.data.goal.title,
+                                style = MaterialTheme.typography.titleSmall,
+                                color = contentColor,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
-                        }
-                        if (item.isExpanded && item.data.tasks.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            item.data.tasks.forEach { task ->
-                                TimelineTaskItem(task, { onEditTask(task) }, { onToggleTaskStatus(task) }, { onViewTask(task) })
-                                Spacer(modifier = Modifier.height(4.dp))
+                            if (item.data.goal.description.isNotEmpty()) {
+                                Text(
+                                    text = item.data.goal.description,
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                                    color = contentColor.copy(alpha = 0.8f),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            if (item.isExpanded && item.data.tasks.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                item.data.tasks.forEach { task ->
+                                    TimelineTaskItem(task, { onEditTask(task) }, { onToggleTaskStatus(task) }, { onViewTask(task) })
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                }
                             }
                         }
                     }
+                ) { measurables, constraints ->
+                    val parentX = absoluteX - scrollOffsetX
+                    val screenStartLocal = -parentX
+
+                    val visStart = max(0f, screenStartLocal)
+                    val visEnd = min(totalWidthPx, screenStartLocal + screenWidthPx)
+                    val visWidth = (visEnd - visStart).coerceAtLeast(0f)
+
+                    val exactWidth = visWidth.roundToInt().coerceAtLeast(100)
+                    val childConstraints = constraints.copy(
+                        minWidth = exactWidth,
+                        maxWidth = exactWidth
+                    )
+
+                    val placeable = measurables[0].measure(childConstraints)
+
+                    layout(totalWidthPx.roundToInt(), placeable.height) {
+                        placeable.place(visStart.roundToInt(), 0)
+                    }
                 }
-            ) { measurables, constraints ->
-                val parentX = absoluteX - scrollOffsetX
-                val screenStartLocal = -parentX
 
-                val visStart = max(0f, screenStartLocal)
-                val visEnd = min(totalWidthPx, screenStartLocal + screenWidthPx)
-                val visWidth = (visEnd - visStart).coerceAtLeast(0f)
-
-                val childConstraints = constraints.copy(
-                    minWidth = 0,
-                    maxWidth = visWidth.roundToInt().coerceAtLeast(100)
-                )
-                val placeable = measurables[0].measure(childConstraints)
-
-                layout(totalWidthPx.roundToInt(), placeable.height) {
-                    placeable.place(visStart.roundToInt(), 0)
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false },
+                    offset = pressOffset
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(if (item.data.goal.status) "Uncomplete" else "Complete") },
+                        onClick = { showMenu = false; onToggleStatus() },
+                        leadingIcon = { Icon(Icons.Default.CheckCircle, null) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Add Task") },
+                        onClick = { showMenu = false; onAddTask() },
+                        leadingIcon = { Icon(Icons.Default.Add, null) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Edit Goal") },
+                        onClick = { showMenu = false; onEditGoal() },
+                        leadingIcon = { Icon(Icons.Default.Edit, null) }
+                    )
                 }
-            }
-
-            DropdownMenu(
-                expanded = showMenu,
-                onDismissRequest = { showMenu = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text(if (item.data.goal.status) "Uncomplete" else "Complete") },
-                    onClick = { showMenu = false; onToggleStatus() },
-                    leadingIcon = { Icon(Icons.Default.CheckCircle, null) }
-                )
-                DropdownMenuItem(
-                    text = { Text("Add Task") },
-                    onClick = { showMenu = false; onAddTask() },
-                    leadingIcon = { Icon(Icons.Default.Add, null) }
-                )
-                DropdownMenuItem(
-                    text = { Text("Edit Goal") },
-                    onClick = { showMenu = false; onEditGoal() },
-                    leadingIcon = { Icon(Icons.Default.Edit, null) }
-                )
             }
         }
     }

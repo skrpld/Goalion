@@ -40,15 +40,12 @@ fun TimelineScreen(
     val dayWidthPx = with(density) { currentDayWidth.toPx() }
     val baseTime = getBaseTime()
 
-    val (minScrollX, maxScrollX) = remember(uiState.goals, dayWidthPx, screenWidthPx) {
-        if (uiState.goals.isEmpty()) return@remember 0f to 0f
 
-        val minTime = uiState.goals.minOf { it.data.goal.startDate }
-        val maxTime = uiState.goals.maxOf { it.data.goal.targetDate }
-
-        val paddingPx = 7 * dayWidthPx
-        val startX = ((minTime - baseTime).toFloat() / MILLIS_IN_DAY * dayWidthPx) - paddingPx
-        val endX = ((maxTime - baseTime).toFloat() / MILLIS_IN_DAY * dayWidthPx) + paddingPx
+    val (minScrollX, maxScrollX) = remember(dayWidthPx, screenWidthPx) {
+        val daysPast = 365f
+        val daysFuture = 365f * 3
+        val startX = -daysPast * dayWidthPx
+        val endX = daysFuture * dayWidthPx
 
         startX to (endX - screenWidthPx).coerceAtLeast(startX)
     }

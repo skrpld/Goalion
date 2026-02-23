@@ -1,5 +1,6 @@
 package com.skrpld.goalion.presentation.screens.timeline
 
+import android.util.Log
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -29,6 +30,7 @@ class TimelineViewModel(
     private val taskInteractors: TaskInteractors
 ) : ViewModel() {
 
+    private val TAG = "GoalionLog_TimelineVM"
     private val profileId: String = savedStateHandle.get<String>("profileId") ?: "invalid_id"
 
     private val _uiState = MutableStateFlow(TimelineUiState())
@@ -40,6 +42,7 @@ class TimelineViewModel(
         private set
 
     init {
+        Log.d(TAG, "Init TimelineViewModel for Profile ID: $profileId")
         observeData()
         viewModelScope.launch {
             delay(100)
@@ -49,11 +52,14 @@ class TimelineViewModel(
 
     private fun observeData() {
         _uiState.update { it.copy(isLoading = true) }
+        Log.d(TAG, "Started observing local DB for goals and tasks")
 
         combine(
             goalInteractors.getWithTasks(profileId),
             _uiState.map { it.showCompleted }.distinctUntilChanged()
         ) { dbData, showCompleted ->
+            Log.d(TAG, "[LOCAL_DB] Emitted new data from DB. Total goals: ${dbData.size}")
+
             val expandedIds = _uiState.value.goals
                 .filter { it.isExpanded }
                 .map { it.data.goal.id }
@@ -70,6 +76,7 @@ class TimelineViewModel(
                 )
             }
         }.onEach { items ->
+            Log.d(TAG, "[UI_STATE] Updating UI state with ${items.size} goals (Completed filter: ${_uiState.value.showCompleted})")
             _uiState.update { it.copy(goals = items, isLoading = false) }
         }.launchIn(viewModelScope)
     }
@@ -85,11 +92,13 @@ class TimelineViewModel(
 
     fun toggleShowCompleted() {
         _uiState.update { it.copy(showCompleted = !it.showCompleted) }
+        Log.d(TAG, "Toggled show completed. Now: ${_uiState.value.showCompleted}")
     }
 
     fun cycleZoomLevel() {
         _uiState.update { state ->
             val newZoom = if (state.zoomLevel == ZoomLevel.NORMAL) ZoomLevel.DETAILED else ZoomLevel.NORMAL
+            Log.d(TAG, "Zoom level cycled to: $newZoom")
             state.copy(zoomLevel = newZoom)
         }
         centerOnToday()
@@ -119,10 +128,12 @@ class TimelineViewModel(
     // --- Status & Priority Actions ---
 
     fun toggleGoalStatus(goal: Goal) {
+        Log.d(TAG, "Toggling Goal status. Goal ID: ${goal.id}, New Status: ${!goal.status}")
         manageGoal(id = goal.id, status = !goal.status)
     }
 
     fun toggleTaskStatus(task: Task) {
+        Log.d(TAG, "Toggling Task status. Task ID: ${task.id}, New Status: ${!task.status}")
         manageTask(id = task.id, status = !task.status)
     }
 
@@ -218,6 +229,7 @@ class TimelineViewModel(
 
     fun onSaveDialog(title: String, description: String, start: Long, target: Long, priority: Int) {
         val state = _uiState.value.dialogState
+        Log.d(TAG, "Saving dialog data. Mode: ${state.mode}, Title: $title")
         when (state.mode) {
             EditMode.CREATE_GOAL -> manageGoal(
                 title = title, description = description,
@@ -242,6 +254,7 @@ class TimelineViewModel(
 
     fun onDeleteFromDialog() {
         val state = _uiState.value.dialogState
+        Log.w(TAG, "Deleting entity from dialog. Mode: ${state.mode}, EntityID: ${state.entityId}")
         when (state.mode) {
             EditMode.EDIT_GOAL -> state.entityId?.let { deleteGoal(it) }
             EditMode.EDIT_TASK -> state.entityId?.let { deleteTask(it) }
@@ -265,13 +278,16 @@ class TimelineViewModel(
         viewModelScope.launch {
             try {
                 if (isDelete && id != null) {
+                    Log.w(TAG, "manageGoal: Executing delete for Goal ID: $id")
                     goalInteractors.delete(id)
                     return@launch
                 }
 
                 if (id == null) {
+                    val newId = UUID.randomUUID().toString()
+                    Log.d(TAG, "manageGoal: Creating new Goal. ID: $newId")
                     goalInteractors.update(
-                        id = UUID.randomUUID().toString(),
+                        id = newId,
                         profileId = profileId,
                         title = title ?: "New Goal",
                         description = description ?: "",
@@ -283,6 +299,7 @@ class TimelineViewModel(
                     )
                 } else {
                     val goal = getGoalById(id) ?: return@launch
+                    Log.d(TAG, "manageGoal: Updating existing Goal. ID: $id")
                     goalInteractors.update(
                         id = goal.id,
                         profileId = goal.profileId,
@@ -296,12 +313,14 @@ class TimelineViewModel(
                     )
                 }
             } catch (e: Exception) {
+                Log.e(TAG, "Error in manageGoal: ${e.message}", e)
                 _uiState.update { it.copy(errorMessage = e.message) }
             }
         }
     }
 
     fun deleteGoal(goalId: String) {
+        Log.w(TAG, "Deleting Goal ID: $goalId")
         viewModelScope.launch { goalInteractors.delete(goalId) }
     }
 
@@ -321,13 +340,16 @@ class TimelineViewModel(
         viewModelScope.launch {
             try {
                 if (isDelete && id != null) {
+                    Log.w(TAG, "manageTask: Executing delete for Task ID: $id")
                     taskInteractors.delete(id)
                     return@launch
                 }
 
                 if (id == null && goalId != null) {
+                    val newId = UUID.randomUUID().toString()
+                    Log.d(TAG, "manageTask: Creating new Task. ID: $newId in Goal ID: $goalId")
                     taskInteractors.update(
-                        id = UUID.randomUUID().toString(),
+                        id = newId,
                         goalId = goalId,
                         title = title ?: "New Task",
                         description = description ?: "",
@@ -343,6 +365,7 @@ class TimelineViewModel(
                     }
                 } else if (id != null) {
                     val task = getTaskById(id) ?: return@launch
+                    Log.d(TAG, "manageTask: Updating existing Task. ID: $id")
                     taskInteractors.update(
                         id = task.id,
                         goalId = task.goalId,
@@ -356,12 +379,14 @@ class TimelineViewModel(
                     )
                 }
             } catch (e: Exception) {
+                Log.e(TAG, "Error in manageTask: ${e.message}", e)
                 _uiState.update { it.copy(errorMessage = e.message) }
             }
         }
     }
 
     fun deleteTask(taskId: String) {
+        Log.w(TAG, "Deleting Task ID: $taskId")
         viewModelScope.launch { taskInteractors.delete(taskId) }
     }
 

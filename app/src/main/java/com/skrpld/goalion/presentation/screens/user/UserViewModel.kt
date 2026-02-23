@@ -1,8 +1,8 @@
 package com.skrpld.goalion.presentation.screens.user
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.skrpld.goalion.domain.model.Profile
 import com.skrpld.goalion.domain.model.User
 import com.skrpld.goalion.domain.usecases.ProfileInteractors
 import com.skrpld.goalion.domain.usecases.UserInteractors
@@ -12,23 +12,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class UserScreenState(
-    val isLoading: Boolean = false,
-    val user: User? = null,
-    val profiles: List<Profile> = emptyList(),
-    val error: String? = null,
-
-    val isLoginMode: Boolean = false,
-
-    val showEditUserDialog: Boolean = false,
-    val showChangePasswordDialog: Boolean = false,
-    val showCreateProfileDialog: Boolean = false
-)
-
 class UserViewModel(
     private val userInteractors: UserInteractors,
     private val profileInteractors: ProfileInteractors
 ) : ViewModel() {
+
+    private val TAG = "GoalionLog_UserVM"
 
     private val _state = MutableStateFlow(UserScreenState())
     val state: StateFlow<UserScreenState> = _state.asStateFlow()
@@ -45,6 +34,7 @@ class UserViewModel(
     var newProfileDescInput = MutableStateFlow("")
 
     init {
+        Log.d(TAG, "Init UserViewModel, checking Auth status...")
         checkAuthStatus()
     }
 
@@ -53,8 +43,10 @@ class UserViewModel(
             _state.update { it.copy(isLoading = true) }
             val user = userInteractors.getUser()
             if (user != null) {
+                Log.d(TAG, "[UI_STATE] User is already logged in: ${user.email} (ID: ${user.id})")
                 onUserLoggedIn(user)
             } else {
+                Log.d(TAG, "[UI_STATE] No user found, showing Auth screen")
                 _state.update { it.copy(isLoading = false, user = null) }
             }
         }
@@ -68,10 +60,13 @@ class UserViewModel(
     }
 
     private suspend fun loadProfiles(userId: String) {
+        Log.d(TAG, "Loading profiles for user: $userId")
         try {
             val profiles = profileInteractors.getProfiles(userId)
+            Log.d(TAG, "[UI_STATE] Loaded ${profiles.size} profiles")
             _state.update { it.copy(profiles = profiles) }
         } catch (e: Exception) {
+            Log.e(TAG, "Failed to load profiles: ${e.message}", e)
             _state.update { it.copy(error = "Failed to load profiles: ${e.message}") }
         }
     }
@@ -80,6 +75,7 @@ class UserViewModel(
 
     fun toggleAuthMode() {
         _state.update { it.copy(isLoginMode = !it.isLoginMode, error = null) }
+        Log.d(TAG, "Toggled Auth Mode. isLoginMode = ${_state.value.isLoginMode}")
     }
 
     fun submitAuth() {
@@ -89,6 +85,8 @@ class UserViewModel(
             val email = emailInput.value
             val pass = passwordInput.value
 
+            Log.d(TAG, "Submitting Auth... LoginMode: ${_state.value.isLoginMode}, Email: $email")
+
             val result = if (_state.value.isLoginMode) {
                 userInteractors.signIn(email, pass)
             } else {
@@ -97,10 +95,12 @@ class UserViewModel(
 
             result.fold(
                 onSuccess = { user ->
+                    Log.d(TAG, "Auth successful for user: ${user.id}")
                     onUserLoggedIn(user)
                     passwordInput.value = ""
                 },
                 onFailure = { error ->
+                    Log.e(TAG, "Auth failed: ${error.message}", error)
                     _state.update { it.copy(isLoading = false, error = error.message) }
                 }
             )
@@ -108,6 +108,7 @@ class UserViewModel(
     }
 
     fun logout() {
+        Log.d(TAG, "User requested Logout")
         viewModelScope.launch {
             userInteractors.logout()
             _state.update { UserScreenState() }
@@ -121,12 +122,15 @@ class UserViewModel(
 
     fun syncAll() {
         val user = _state.value.user ?: return
+        Log.d(TAG, "[SYNC] User requested manual sync for User ID: ${user.id}")
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
             try {
                 profileInteractors.sync(user.id)
-                loadProfiles(user.id)
+                loadProfiles(user.id) // Reload after sync
+                Log.d(TAG, "[SYNC] Manual sync triggered successfully")
             } catch (e: Exception) {
+                Log.e(TAG, "[SYNC] Sync failed: ${e.message}", e)
                 _state.update { it.copy(error = "Sync failed: ${e.message}") }
             } finally {
                 _state.update { it.copy(isLoading = false) }
@@ -158,21 +162,25 @@ class UserViewModel(
 
     fun saveUserData() {
         val user = _state.value.user ?: return
+        Log.d(TAG, "Saving user data. ID: ${user.id}, New Name: ${nameInput.value}")
         viewModelScope.launch {
             try {
                 userInteractors.updateUser(user.id, nameInput.value, emailInput.value)
                 val updatedUser = userInteractors.getUser()
                 if (updatedUser != null) {
                     _state.update { it.copy(user = updatedUser) }
+                    Log.d(TAG, "[UI_STATE] User data updated successfully in UI state")
                 }
                 hideEditDialog()
             } catch (e: Exception) {
+                Log.e(TAG, "Failed to update user data: ${e.message}", e)
                 _state.update { it.copy(error = e.message) }
             }
         }
     }
 
     fun submitChangePassword() {
+        Log.d(TAG, "Submitting password change...")
         viewModelScope.launch {
             val result = userInteractors.changePassword(
                 currentPassInput.value,
@@ -181,10 +189,12 @@ class UserViewModel(
             )
             result.fold(
                 onSuccess = {
+                    Log.d(TAG, "Password changed successfully")
                     hideChangePasswordDialog()
                     _state.update { it.copy(error = "Password changed successfully") }
                 },
                 onFailure = { e ->
+                    Log.e(TAG, "Failed to change password: ${e.message}", e)
                     _state.update { it.copy(error = e.message) }
                 }
             )
@@ -201,6 +211,7 @@ class UserViewModel(
 
     fun createProfile() {
         val user = _state.value.user ?: return
+        Log.d(TAG, "Creating new profile: ${newProfileTitleInput.value} for User ID: ${user.id}")
         viewModelScope.launch {
             try {
                 profileInteractors.create(
@@ -212,7 +223,9 @@ class UserViewModel(
                 hideCreateProfile()
                 newProfileTitleInput.value = ""
                 newProfileDescInput.value = ""
+                Log.d(TAG, "Profile created successfully")
             } catch (e: Exception) {
+                Log.e(TAG, "Failed to create profile: ${e.message}", e)
                 _state.update { it.copy(error = e.message) }
             }
         }

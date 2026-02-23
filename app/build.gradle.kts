@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.ui.unit)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.foundation)
     ksp(libs.androidx.room.compiler)
 
     // --- Dependency Injection (Koin) ---
